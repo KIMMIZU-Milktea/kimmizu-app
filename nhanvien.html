@@ -18,6 +18,57 @@
 </script>
 
 <style>
+
+/* ===== DATE PICKER dd/mm/yyyy ===== */
+.dp-wrap{position:relative}
+.dp-input{
+  width:100%;padding:10px 36px 10px 12px;
+  border:1.5px solid var(--cream-dark);border-radius:var(--radius-sm);
+  background:#fff;font-size:14px;color:var(--brown);
+  outline:none;cursor:pointer;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' fill='none' viewBox='0 0 24 24'%3E%3Crect x='3' y='4' width='18' height='18' rx='2' stroke='%236B3F26' stroke-width='1.8'/%3E%3Cline x1='3' y1='9' x2='21' y2='9' stroke='%236B3F26' stroke-width='1.8'/%3E%3Cline x1='8' y1='2' x2='8' y2='6' stroke='%236B3F26' stroke-width='1.8' stroke-linecap='round'/%3E%3Cline x1='16' y1='2' x2='16' y2='6' stroke='%236B3F26' stroke-width='1.8' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 10px center;
+}
+.dp-input:focus{border-color:var(--brown-light)}
+.dp-input::placeholder{color:#aaa}
+.dp-cal{
+  position:fixed;z-index:9000;
+  background:#fff;border-radius:12px;
+  box-shadow:0 8px 32px rgba(59,35,20,0.22);
+  width:280px;overflow:hidden;
+  display:none;
+}
+.dp-cal.open{display:block}
+.dp-hd{
+  background:var(--brown);color:var(--cream);
+  padding:12px 14px;display:flex;align-items:center;justify-content:space-between;
+}
+.dp-hd-title{font-size:14px;font-weight:600;cursor:pointer;flex:1;text-align:center}
+.dp-nav{background:none;border:none;color:var(--cream);font-size:18px;cursor:pointer;padding:0 6px;line-height:1}
+.dp-nav:hover{color:var(--cream-dark)}
+.dp-dow{display:grid;grid-template-columns:repeat(7,1fr);background:var(--cream)}
+.dp-dow span{text-align:center;font-size:11px;font-weight:600;color:var(--brown-mid);padding:6px 0}
+.dp-days{display:grid;grid-template-columns:repeat(7,1fr);padding:6px}
+.dp-day{
+  text-align:center;padding:6px 2px;font-size:13px;
+  border-radius:6px;cursor:pointer;color:var(--brown);
+  border:none;background:none;
+}
+.dp-day:hover{background:var(--cream)}
+.dp-day.today{font-weight:700;color:var(--brown-light)}
+.dp-day.selected{background:var(--brown)!important;color:#fff!important;font-weight:700}
+.dp-day.other-month{color:#ccc}
+.dp-day.disabled{color:#ddd;pointer-events:none}
+.dp-month-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;padding:12px}
+.dp-month-btn{padding:8px 4px;border:none;background:var(--cream);border-radius:6px;font-size:13px;color:var(--brown);cursor:pointer;text-align:center}
+.dp-month-btn:hover,.dp-month-btn.active{background:var(--brown);color:#fff}
+.dp-year-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;padding:12px;max-height:200px;overflow-y:auto}
+.dp-year-btn{padding:6px 2px;border:none;background:var(--cream);border-radius:6px;font-size:12px;color:var(--brown);cursor:pointer}
+.dp-year-btn:hover,.dp-year-btn.active{background:var(--brown);color:#fff}
+.dp-footer{padding:8px 14px;border-top:1px solid var(--cream-dark);display:flex;justify-content:space-between}
+.dp-clear{font-size:12px;color:var(--brown-mid);border:none;background:none;cursor:pointer}
+.dp-today-btn{font-size:12px;color:var(--brown);border:none;background:none;cursor:pointer;font-weight:600}
+
 /* ===== RESET & BASE ===== */
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 html{font-size:16px;height:100%}
@@ -634,12 +685,12 @@ textarea.form-input{resize:vertical;min-height:80px}
       </select>
     </div>
     <div class="form-group">
-      <label>Hạn chót <span style="font-size:11px;color:var(--brown-pale)">(dd/mm/yyyy)</span></label>
-      <input type="text" class="form-input" id="ps-han-chot"
-        placeholder="dd/mm/yyyy"
-        maxlength="10"
-        inputmode="numeric"
-        oninput="autoFormatDate(this)">
+      <label>Hạn chót</label>
+      <div class="dp-wrap">
+        <input type="text" class="form-input dp-input" id="ps-han-chot"
+          placeholder="dd/mm/yyyy" readonly
+          onclick="dpOpen(this)">
+      </div>
     </div>
     <button class="btn-submit" onclick="submitPhatSinh()">Tạo việc</button>
     <button class="btn-cancel" style="width:100%;margin-top:8px;padding:12px;text-align:center" onclick="closeSheet()">Huỷ</button>
@@ -1388,14 +1439,6 @@ async function apiPost(body) {
 // ============================================================
 // DATE HELPERS
 // ============================================================
-// Tự động thêm dấu / khi gõ ngày
-function autoFormatDate(input) {
-  let v = input.value.replace(/\D/g,'');
-  if (v.length >= 3 && v.length <= 4) v = v.slice(0,2) + '/' + v.slice(2);
-  else if (v.length >= 5) v = v.slice(0,2) + '/' + v.slice(2,4) + '/' + v.slice(4,8);
-  input.value = v;
-}
-
 function formatDateVN(d) {
   const days = ['Chủ nhật','Thứ hai','Thứ ba','Thứ tư','Thứ năm','Thứ sáu','Thứ bảy'];
   const dd = String(d.getDate()).padStart(2,'0');
@@ -1408,6 +1451,167 @@ function formatDateAPI(d) {
   return dd + '/' + mm + '/' + d.getFullYear();
 }
 
+
+
+// ============================================================
+// DATE PICKER — dd/mm/yyyy với lịch tháng
+// ============================================================
+const DP = {
+  el: null,       // input element hiện tại
+  calEl: null,    // calendar element
+  viewMode: 'days', // days | months | years
+  viewYear: 0,
+  viewMonth: 0,
+  selectedDate: null,
+  onSelect: null,
+};
+
+const MONTH_NAMES = ['Tháng 1','Tháng 2','Tháng 3','Tháng 4','Tháng 5','Tháng 6','Tháng 7','Tháng 8','Tháng 9','Tháng 10','Tháng 11','Tháng 12'];
+const DOW_NAMES   = ['CN','T2','T3','T4','T5','T6','T7'];
+
+function dpInit() {
+  if (document.getElementById('dp-cal')) return;
+  const cal = document.createElement('div');
+  cal.id = 'dp-cal';
+  cal.className = 'dp-cal';
+  cal.innerHTML = `
+    <div class="dp-hd">
+      <button class="dp-nav" id="dp-prev">&#8249;</button>
+      <div class="dp-hd-title" id="dp-title" onclick="dpToggleView()"></div>
+      <button class="dp-nav" id="dp-next">&#8250;</button>
+    </div>
+    <div id="dp-body"></div>
+    <div class="dp-footer">
+      <button class="dp-clear" onclick="dpClear()">Xoá</button>
+      <button class="dp-today-btn" onclick="dpSelectToday()">Hôm nay</button>
+    </div>`;
+  document.body.appendChild(cal);
+  DP.calEl = cal;
+  document.getElementById('dp-prev').onclick = dpPrev;
+  document.getElementById('dp-next').onclick = dpNext;
+  document.addEventListener('click', e => {
+    if (!e.target.closest('.dp-cal') && !e.target.closest('.dp-input')) dpClose();
+  });
+}
+
+function dpOpen(inputEl, onSelectCb) {
+  dpInit();
+  DP.el = inputEl;
+  DP.onSelect = onSelectCb || null;
+  const val = inputEl.value;
+  const now = new Date();
+  if (val && /^\d{2}\/\d{2}\/\d{4}$/.test(val)) {
+    const p = val.split('/');
+    DP.selectedDate = new Date(+p[2], +p[1]-1, +p[0]);
+    DP.viewYear  = +p[2];
+    DP.viewMonth = +p[1]-1;
+  } else {
+    DP.selectedDate = null;
+    DP.viewYear  = now.getFullYear();
+    DP.viewMonth = now.getMonth();
+  }
+  DP.viewMode = 'days';
+  dpRender();
+  // Vị trí hiển thị
+  const rect = inputEl.getBoundingClientRect();
+  const cal  = DP.calEl;
+  cal.classList.add('open');
+  const spaceBelow = window.innerHeight - rect.bottom;
+  if (spaceBelow < 320 && rect.top > 320) {
+    cal.style.top  = (rect.top - 320 + window.scrollY) + 'px';
+  } else {
+    cal.style.top  = (rect.bottom + window.scrollY + 4) + 'px';
+  }
+  const left = Math.min(rect.left, window.innerWidth - 290);
+  cal.style.left = Math.max(8, left) + 'px';
+}
+
+function dpClose() { if (DP.calEl) DP.calEl.classList.remove('open'); }
+
+function dpToggleView() {
+  DP.viewMode = DP.viewMode==='days' ? 'months' : DP.viewMode==='months' ? 'years' : 'days';
+  dpRender();
+}
+
+function dpPrev() {
+  if (DP.viewMode==='days')   { DP.viewMonth--; if(DP.viewMonth<0){DP.viewMonth=11;DP.viewYear--;} }
+  else if(DP.viewMode==='months') DP.viewYear--;
+  else DP.viewYear -= 12;
+  dpRender();
+}
+function dpNext() {
+  if (DP.viewMode==='days')   { DP.viewMonth++; if(DP.viewMonth>11){DP.viewMonth=0;DP.viewYear++;} }
+  else if(DP.viewMode==='months') DP.viewYear++;
+  else DP.viewYear += 12;
+  dpRender();
+}
+
+function dpRender() {
+  const title = document.getElementById('dp-title');
+  const body  = document.getElementById('dp-body');
+  if (DP.viewMode==='days') {
+    title.textContent = MONTH_NAMES[DP.viewMonth] + ' ' + DP.viewYear;
+    body.innerHTML = dpRenderDays();
+  } else if (DP.viewMode==='months') {
+    title.textContent = String(DP.viewYear);
+    body.innerHTML = dpRenderMonths();
+  } else {
+    const base = Math.floor(DP.viewYear/12)*12;
+    title.textContent = base + ' – ' + (base+11);
+    body.innerHTML = dpRenderYears(base);
+  }
+}
+
+function dpRenderDays() {
+  const sd  = DP.selectedDate;
+  const now = new Date();
+  const firstDay = new Date(DP.viewYear, DP.viewMonth, 1).getDay();
+  const daysInMonth = new Date(DP.viewYear, DP.viewMonth+1, 0).getDate();
+  const daysInPrev  = new Date(DP.viewYear, DP.viewMonth, 0).getDate();
+  let html = '<div class="dp-dow">' + DOW_NAMES.map(d=>`<span>${d}</span>`).join('') + '</div><div class="dp-days">';
+  for (let i=0; i<firstDay; i++) {
+    const d = daysInPrev - firstDay + 1 + i;
+    html += `<button class="dp-day other-month" onclick="dpPickDay(${DP.viewYear},${DP.viewMonth-1},${d})">${d}</button>`;
+  }
+  for (let d=1; d<=daysInMonth; d++) {
+    const isToday = d===now.getDate() && DP.viewMonth===now.getMonth() && DP.viewYear===now.getFullYear();
+    const isSel   = sd && d===sd.getDate() && DP.viewMonth===sd.getMonth() && DP.viewYear===sd.getFullYear();
+    html += `<button class="dp-day${isToday?' today':''}${isSel?' selected':''}" onclick="dpPickDay(${DP.viewYear},${DP.viewMonth},${d})">${d}</button>`;
+  }
+  const remain = 42 - firstDay - daysInMonth;
+  for (let d=1; d<=remain; d++) {
+    html += `<button class="dp-day other-month" onclick="dpPickDay(${DP.viewYear},${DP.viewMonth+1},${d})">${d}</button>`;
+  }
+  return html + '</div>';
+}
+
+function dpRenderMonths() {
+  return '<div class="dp-month-grid">' + MONTH_NAMES.map((m,i)=>
+    `<button class="dp-month-btn${DP.selectedDate&&i===DP.selectedDate.getMonth()&&DP.viewYear===DP.selectedDate.getFullYear()?' active':''}" onclick="dpPickMonth(${i})">${m}</button>`
+  ).join('') + '</div>';
+}
+
+function dpRenderYears(base) {
+  let html = '<div class="dp-year-grid">';
+  for (let y=base; y<base+12; y++) {
+    html += `<button class="dp-year-btn${DP.selectedDate&&y===DP.selectedDate.getFullYear()?' active':''}" onclick="dpPickYear(${y})">${y}</button>`;
+  }
+  return html + '</div>';
+}
+
+function dpPickDay(y, m, d) {
+  const date = new Date(y, m, d);
+  DP.selectedDate = date;
+  const str = pad2(date.getDate())+'/'+pad2(date.getMonth()+1)+'/'+date.getFullYear();
+  if (DP.el) DP.el.value = str;
+  if (DP.onSelect) DP.onSelect(str);
+  dpClose();
+}
+function dpPickMonth(m) { DP.viewMonth=m; DP.viewMode='days'; dpRender(); }
+function dpPickYear(y)  { DP.viewYear=y;  DP.viewMode='months'; dpRender(); }
+function dpClear() { if(DP.el) DP.el.value=''; DP.selectedDate=null; dpClose(); }
+function dpSelectToday() { const n=new Date(); dpPickDay(n.getFullYear(),n.getMonth(),n.getDate()); }
+function pad2(n) { return String(n).padStart(2,'0'); }
 
 // ============================================================
 // USER MENU & LOGOUT

@@ -15,6 +15,57 @@
 </script>
 
 <style>
+
+/* ===== DATE PICKER dd/mm/yyyy ===== */
+.dp-wrap{position:relative}
+.dp-input{
+  width:100%;padding:10px 36px 10px 12px;
+  border:1.5px solid var(--cream-dark);border-radius:var(--radius-sm);
+  background:#fff;font-size:14px;color:var(--brown);
+  outline:none;cursor:pointer;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' fill='none' viewBox='0 0 24 24'%3E%3Crect x='3' y='4' width='18' height='18' rx='2' stroke='%236B3F26' stroke-width='1.8'/%3E%3Cline x1='3' y1='9' x2='21' y2='9' stroke='%236B3F26' stroke-width='1.8'/%3E%3Cline x1='8' y1='2' x2='8' y2='6' stroke='%236B3F26' stroke-width='1.8' stroke-linecap='round'/%3E%3Cline x1='16' y1='2' x2='16' y2='6' stroke='%236B3F26' stroke-width='1.8' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 10px center;
+}
+.dp-input:focus{border-color:var(--brown-light)}
+.dp-input::placeholder{color:#aaa}
+.dp-cal{
+  position:fixed;z-index:9000;
+  background:#fff;border-radius:12px;
+  box-shadow:0 8px 32px rgba(59,35,20,0.22);
+  width:280px;overflow:hidden;
+  display:none;
+}
+.dp-cal.open{display:block}
+.dp-hd{
+  background:var(--brown);color:var(--cream);
+  padding:12px 14px;display:flex;align-items:center;justify-content:space-between;
+}
+.dp-hd-title{font-size:14px;font-weight:600;cursor:pointer;flex:1;text-align:center}
+.dp-nav{background:none;border:none;color:var(--cream);font-size:18px;cursor:pointer;padding:0 6px;line-height:1}
+.dp-nav:hover{color:var(--cream-dark)}
+.dp-dow{display:grid;grid-template-columns:repeat(7,1fr);background:var(--cream)}
+.dp-dow span{text-align:center;font-size:11px;font-weight:600;color:var(--brown-mid);padding:6px 0}
+.dp-days{display:grid;grid-template-columns:repeat(7,1fr);padding:6px}
+.dp-day{
+  text-align:center;padding:6px 2px;font-size:13px;
+  border-radius:6px;cursor:pointer;color:var(--brown);
+  border:none;background:none;
+}
+.dp-day:hover{background:var(--cream)}
+.dp-day.today{font-weight:700;color:var(--brown-light)}
+.dp-day.selected{background:var(--brown)!important;color:#fff!important;font-weight:700}
+.dp-day.other-month{color:#ccc}
+.dp-day.disabled{color:#ddd;pointer-events:none}
+.dp-month-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;padding:12px}
+.dp-month-btn{padding:8px 4px;border:none;background:var(--cream);border-radius:6px;font-size:13px;color:var(--brown);cursor:pointer;text-align:center}
+.dp-month-btn:hover,.dp-month-btn.active{background:var(--brown);color:#fff}
+.dp-year-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;padding:12px;max-height:200px;overflow-y:auto}
+.dp-year-btn{padding:6px 2px;border:none;background:var(--cream);border-radius:6px;font-size:12px;color:var(--brown);cursor:pointer}
+.dp-year-btn:hover,.dp-year-btn.active{background:var(--brown);color:#fff}
+.dp-footer{padding:8px 14px;border-top:1px solid var(--cream-dark);display:flex;justify-content:space-between}
+.dp-clear{font-size:12px;color:var(--brown-mid);border:none;background:none;cursor:pointer}
+.dp-today-btn{font-size:12px;color:var(--brown);border:none;background:none;cursor:pointer;font-weight:600}
+
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 html{font-size:15px;height:100%}
 body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:#F0E6D0;color:#3B2314;min-height:100%;overflow-x:hidden}
@@ -348,6 +399,9 @@ textarea.inp{resize:vertical;min-height:80px}
       <button class="sb-item" id="sbn-baocao" onclick="goPage('baocao')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>Báo cáo
       </button>
+      <button class="sb-item" id="sbn-nhatky" onclick="goPage('nhatky')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>Nhật ký
+      </button>
       <button class="sb-item" id="sbn-caidat" onclick="goPage('caidat')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Cài đặt
       </button>
@@ -439,7 +493,7 @@ textarea.inp{resize:vertical;min-height:80px}
         </div>
         <div class="filter-bar">
           <div><label style="font-size:11px;color:var(--brown-mid);display:block;margin-bottom:3px">Ngày</label>
-          <input type="date" class="inp" id="cv-ng" style="max-width:160px" onchange="loadCV()"></div>
+          <div class="dp-wrap"><input type="text" class="inp dp-input" id="cv-ng" placeholder="dd/mm/yyyy" readonly style="max-width:160px" onclick="dpOpen(this,()=>loadCV())"></div></div>
           <div><label style="font-size:11px;color:var(--brown-mid);display:block;margin-bottom:3px">Trạng thái</label>
           <select class="inp" id="cv-tt" style="max-width:160px" onchange="loadCV()">
             <option value="">Tất cả</option>
@@ -509,11 +563,11 @@ textarea.inp{resize:vertical;min-height:80px}
             <div class="form-row" style="align-items:flex-end;gap:12px">
               <div class="form-grp2" style="margin-bottom:0">
                 <label>Từ ngày</label>
-                <input type="date" class="inp" id="bc-tu">
+                <div class="dp-wrap"><input type="text" class="inp dp-input" id="bc-tu" placeholder="dd/mm/yyyy" readonly onclick="dpOpen(this)"></div>
               </div>
               <div class="form-grp2" style="margin-bottom:0">
                 <label>Đến ngày</label>
-                <input type="date" class="inp" id="bc-den">
+                <div class="dp-wrap"><input type="text" class="inp dp-input" id="bc-den" placeholder="dd/mm/yyyy" readonly onclick="dpOpen(this)"></div>
               </div>
               <button class="btn btn-primary" onclick="loadBC()" style="align-self:flex-end;white-space:nowrap">Xem báo cáo</button>
             </div>
@@ -533,6 +587,19 @@ textarea.inp{resize:vertical;min-height:80px}
             <tbody id="bc-nv-tbl"></tbody></table>
           </div></div>
         </div>
+      </div>
+
+      <!-- NHẬT KÝ -->
+      <div class="page" id="page-nhatky">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+          <div style="font-size:13px;color:var(--brown-mid)">200 sự kiện gần nhất</div>
+          <button class="btn btn-primary btn-sm" onclick="loadNhatKy()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" width="14" height="14"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>Làm mới
+          </button>
+        </div>
+        <div class="card"><div class="card-bd" id="nk-list">
+          <div style="text-align:center;padding:48px;color:var(--brown-pale)">Nhấn "Làm mới" để tải nhật ký</div>
+        </div></div>
       </div>
 
       <!-- CÀI ĐẶT -->
@@ -615,7 +682,7 @@ textarea.inp{resize:vertical;min-height:80px}
         </div>
       </div>
       <div class="form-row">
-        <div class="form-grp2"><label>Ngày thực hiện</label><input type="date" class="inp" id="cv-ngay"></div>
+        <div class="form-grp2"><label>Ngày thực hiện</label><div class="dp-wrap"><input type="text" class="inp dp-input" id="cv-ngay" placeholder="dd/mm/yyyy" readonly onclick="dpOpen(this)"></div></div>
         <div class="form-grp2"><label>Ưu tiên</label>
           <select class="inp" id="cv-uu"><option>Bình thường</option><option>Cao</option><option>Khẩn</option><option>Thấp</option></select>
         </div>
@@ -628,7 +695,7 @@ textarea.inp{resize:vertical;min-height:80px}
           <input type="number" class="inp" id="cv-ck-n" placeholder="VD: 2 (T2) / 1 (ngày 1)">
         </div>
       </div>
-      <div class="form-grp2"><label>Hạn chót</label><input type="date" class="inp" id="cv-han"></div>
+      <div class="form-grp2"><label>Hạn chót</label><div class="dp-wrap"><input type="text" class="inp dp-input" id="cv-han" placeholder="dd/mm/yyyy" readonly onclick="dpOpen(this)"></div></div>
     </div>
     <div class="modal-ft">
       <button class="btn btn-ghost" onclick="closeM('modal-cv')">Huỷ</button>
@@ -715,7 +782,7 @@ async function initApp() {
   document.getElementById('sb-name').textContent = S.user.tenNV;
   document.getElementById('sb-av').textContent   = S.user.tenNV.charAt(0).toUpperCase();
   const today = toInput(new Date());
-  document.getElementById('cv-ng').value  = today;
+  document.getElementById('cv-ng').value  = fmtDate(new Date());
   document.getElementById('cv-ngay').value = today;
   document.getElementById('bc-tu').value  = today;
   document.getElementById('bc-den').value = today;
@@ -768,8 +835,8 @@ document.getElementById('login-mk').addEventListener('keydown',e=>{if(e.key==='E
 // ============================================================
 // NAVIGATION
 // ============================================================
-const PAGE_TITLES={dashboard:'Dashboard',congviec:'Công việc',nhanvien:'Nhân viên',thongbao:'Thông báo',kpi:'KPI',baocao:'Báo cáo',caidat:'Cài đặt'};
-const PAGES=['dashboard','congviec','nhanvien','thongbao','kpi','baocao','caidat'];
+const PAGE_TITLES={dashboard:'Dashboard',congviec:'Công việc',nhanvien:'Nhân viên',thongbao:'Thông báo',kpi:'KPI',baocao:'Báo cáo',nhatky:'Nhật ký',caidat:'Cài đặt'};
+const PAGES=['dashboard','congviec','nhanvien','thongbao','kpi','baocao','nhatky','caidat'];
 
 function goPage(p){
   S.page=p;
@@ -836,7 +903,7 @@ function switchCVTab(loai,btn){
 }
 
 async function loadCV(){
-  const ngay=fromInput(document.getElementById('cv-ng').value);
+  const ngay=document.getElementById('cv-ng').value;
   const tt=document.getElementById('cv-tt').value;
   const ca=document.getElementById('cv-ca-f').value;
   try{
@@ -880,7 +947,7 @@ function openModalCV(){
   ['cv-ten','cv-mota','cv-han','cv-ck-n'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('cv-loai').value='Ca';
   document.getElementById('cv-uu').value='Bình thường';
-  document.getElementById('cv-ngay').value=toInput(new Date());
+  document.getElementById('cv-ngay').value=fmtDate(new Date());
   toggleCVF();
   document.getElementById('modal-cv').classList.add('open');
 }
@@ -893,8 +960,8 @@ function openModalSuaCV(v){
   document.getElementById('cv-loai').value=v.loaiViec;
   document.getElementById('cv-ca').value=v.ca||'Sáng';
   document.getElementById('cv-uu').value=v.uuTien||'Bình thường';
-  document.getElementById('cv-ngay').value=v.ngayThucHien?ddmmToInput(v.ngayThucHien):'';
-  document.getElementById('cv-han').value=v.hanChot?ddmmToInput(v.hanChot):'';
+  document.getElementById('cv-ngay').value=v.ngayThucHien||'';
+  document.getElementById('cv-han').value=v.hanChot||'';
   toggleCVF();
   document.getElementById('modal-cv').classList.add('open');
 }
@@ -908,9 +975,9 @@ async function submitCV(){
     tenViec:ten,moTa:document.getElementById('cv-mota').value.trim(),
     loaiViec:document.getElementById('cv-loai').value,
     ca:document.getElementById('cv-ca').value,
-    ngayThucHien:fromInput(document.getElementById('cv-ngay').value),
+    ngayThucHien:document.getElementById('cv-ngay').value,
     uuTien:document.getElementById('cv-uu').value,
-    hanChot:fromInput(document.getElementById('cv-han').value),
+    hanChot:document.getElementById('cv-han').value,
     chuKy:document.getElementById('cv-ck').value,
   };
   if(id)payload.id=id;
@@ -1049,8 +1116,8 @@ function switchKPI(tab,btn){
 // BÁO CÁO
 // ============================================================
 async function loadBC(){
-  const tu=fromInput(document.getElementById('bc-tu').value);
-  const den=fromInput(document.getElementById('bc-den').value);
+  const tu=document.getElementById('bc-tu').value;
+  const den=document.getElementById('bc-den').value;
   if(!tu||!den){toast('Chọn khoảng thời gian');return;}
   try{
     const res=await api({action:'getBaoCao',tuNgay:tu,denNgay:den});
@@ -1143,6 +1210,27 @@ async function saveKW(){
   catch(e){toast('Lỗi kết nối');}
 }
 
+
+// ============================================================
+// NHẬT KÝ
+// ============================================================
+async function loadNhatKy(){
+  try{
+    const res=await api({action:'getNhatKy'});
+    if(!res.success)return;
+    const el=document.getElementById('nk-list');
+    if(!res.data?.length){el.innerHTML='<div style="text-align:center;padding:48px;color:var(--brown-pale)">Chưa có nhật ký</div>';return;}
+    el.innerHTML='<div class="tbl-wrap"><table><thead><tr><th>Thời gian</th><th>Loại</th><th>Người dùng</th><th>Ghi chú</th></tr></thead><tbody>'+
+      res.data.map(r=>`<tr>
+        <td style="font-size:12px;white-space:nowrap">${r.thoiGian}</td>
+        <td><span class="badge ${r.loai.includes('LỖI')?'b-red':r.loai.includes('ĐĂNG NHẬP')?'b-green':r.loai.includes('TẠO')?'b-blue':'b-gray'}" style="font-size:10px">${r.loai}</span></td>
+        <td style="font-size:12px">${r.nguoi}</td>
+        <td style="font-size:12px;color:var(--brown-mid)">${r.ghiChu}</td>
+      </tr>`).join('')+
+      '</tbody></table></div>';
+  }catch(e){toast('Lỗi tải nhật ký');}
+}
+
 // ============================================================
 // HELPERS: BADGE
 // ============================================================
@@ -1176,11 +1264,169 @@ async function api(params){
 // ============================================================
 // DATE HELPERS
 // ============================================================
-function fmtDate(d){return pad(d.getDate())+'/'+pad(d.getMonth()+1)+'/'+d.getFullYear();}
-function toInput(d){return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());}
-function fromInput(s){if(!s)return'';const p=s.split('-');return p.length===3?p[2]+'/'+p[1]+'/'+p[0]:s;}
-function ddmmToInput(s){if(!s)return'';const p=s.split('/');return p.length===3?p[2]+'-'+p[1]+'-'+p[0]:s;}
+function fmtDate(d){if(!d||isNaN(d))return'';return pad(d.getDate())+'/'+pad(d.getMonth()+1)+'/'+d.getFullYear();}
 function pad(n){return String(n).padStart(2,'0');}
+
+// ============================================================
+// DATE PICKER — dd/mm/yyyy với lịch tháng
+// ============================================================
+const DP = {
+  el: null,       // input element hiện tại
+  calEl: null,    // calendar element
+  viewMode: 'days', // days | months | years
+  viewYear: 0,
+  viewMonth: 0,
+  selectedDate: null,
+  onSelect: null,
+};
+
+const MONTH_NAMES = ['Tháng 1','Tháng 2','Tháng 3','Tháng 4','Tháng 5','Tháng 6','Tháng 7','Tháng 8','Tháng 9','Tháng 10','Tháng 11','Tháng 12'];
+const DOW_NAMES   = ['CN','T2','T3','T4','T5','T6','T7'];
+
+function dpInit() {
+  if (document.getElementById('dp-cal')) return;
+  const cal = document.createElement('div');
+  cal.id = 'dp-cal';
+  cal.className = 'dp-cal';
+  cal.innerHTML = `
+    <div class="dp-hd">
+      <button class="dp-nav" id="dp-prev">&#8249;</button>
+      <div class="dp-hd-title" id="dp-title" onclick="dpToggleView()"></div>
+      <button class="dp-nav" id="dp-next">&#8250;</button>
+    </div>
+    <div id="dp-body"></div>
+    <div class="dp-footer">
+      <button class="dp-clear" onclick="dpClear()">Xoá</button>
+      <button class="dp-today-btn" onclick="dpSelectToday()">Hôm nay</button>
+    </div>`;
+  document.body.appendChild(cal);
+  DP.calEl = cal;
+  document.getElementById('dp-prev').onclick = dpPrev;
+  document.getElementById('dp-next').onclick = dpNext;
+  document.addEventListener('click', e => {
+    if (!e.target.closest('.dp-cal') && !e.target.closest('.dp-input')) dpClose();
+  });
+}
+
+function dpOpen(inputEl, onSelectCb) {
+  dpInit();
+  DP.el = inputEl;
+  DP.onSelect = onSelectCb || null;
+  const val = inputEl.value;
+  const now = new Date();
+  if (val && /^\d{2}\/\d{2}\/\d{4}$/.test(val)) {
+    const p = val.split('/');
+    DP.selectedDate = new Date(+p[2], +p[1]-1, +p[0]);
+    DP.viewYear  = +p[2];
+    DP.viewMonth = +p[1]-1;
+  } else {
+    DP.selectedDate = null;
+    DP.viewYear  = now.getFullYear();
+    DP.viewMonth = now.getMonth();
+  }
+  DP.viewMode = 'days';
+  dpRender();
+  // Vị trí hiển thị
+  const rect = inputEl.getBoundingClientRect();
+  const cal  = DP.calEl;
+  cal.classList.add('open');
+  const spaceBelow = window.innerHeight - rect.bottom;
+  if (spaceBelow < 320 && rect.top > 320) {
+    cal.style.top  = (rect.top - 320 + window.scrollY) + 'px';
+  } else {
+    cal.style.top  = (rect.bottom + window.scrollY + 4) + 'px';
+  }
+  const left = Math.min(rect.left, window.innerWidth - 290);
+  cal.style.left = Math.max(8, left) + 'px';
+}
+
+function dpClose() { if (DP.calEl) DP.calEl.classList.remove('open'); }
+
+function dpToggleView() {
+  DP.viewMode = DP.viewMode==='days' ? 'months' : DP.viewMode==='months' ? 'years' : 'days';
+  dpRender();
+}
+
+function dpPrev() {
+  if (DP.viewMode==='days')   { DP.viewMonth--; if(DP.viewMonth<0){DP.viewMonth=11;DP.viewYear--;} }
+  else if(DP.viewMode==='months') DP.viewYear--;
+  else DP.viewYear -= 12;
+  dpRender();
+}
+function dpNext() {
+  if (DP.viewMode==='days')   { DP.viewMonth++; if(DP.viewMonth>11){DP.viewMonth=0;DP.viewYear++;} }
+  else if(DP.viewMode==='months') DP.viewYear++;
+  else DP.viewYear += 12;
+  dpRender();
+}
+
+function dpRender() {
+  const title = document.getElementById('dp-title');
+  const body  = document.getElementById('dp-body');
+  if (DP.viewMode==='days') {
+    title.textContent = MONTH_NAMES[DP.viewMonth] + ' ' + DP.viewYear;
+    body.innerHTML = dpRenderDays();
+  } else if (DP.viewMode==='months') {
+    title.textContent = String(DP.viewYear);
+    body.innerHTML = dpRenderMonths();
+  } else {
+    const base = Math.floor(DP.viewYear/12)*12;
+    title.textContent = base + ' – ' + (base+11);
+    body.innerHTML = dpRenderYears(base);
+  }
+}
+
+function dpRenderDays() {
+  const sd  = DP.selectedDate;
+  const now = new Date();
+  const firstDay = new Date(DP.viewYear, DP.viewMonth, 1).getDay();
+  const daysInMonth = new Date(DP.viewYear, DP.viewMonth+1, 0).getDate();
+  const daysInPrev  = new Date(DP.viewYear, DP.viewMonth, 0).getDate();
+  let html = '<div class="dp-dow">' + DOW_NAMES.map(d=>`<span>${d}</span>`).join('') + '</div><div class="dp-days">';
+  for (let i=0; i<firstDay; i++) {
+    const d = daysInPrev - firstDay + 1 + i;
+    html += `<button class="dp-day other-month" onclick="dpPickDay(${DP.viewYear},${DP.viewMonth-1},${d})">${d}</button>`;
+  }
+  for (let d=1; d<=daysInMonth; d++) {
+    const isToday = d===now.getDate() && DP.viewMonth===now.getMonth() && DP.viewYear===now.getFullYear();
+    const isSel   = sd && d===sd.getDate() && DP.viewMonth===sd.getMonth() && DP.viewYear===sd.getFullYear();
+    html += `<button class="dp-day${isToday?' today':''}${isSel?' selected':''}" onclick="dpPickDay(${DP.viewYear},${DP.viewMonth},${d})">${d}</button>`;
+  }
+  const remain = 42 - firstDay - daysInMonth;
+  for (let d=1; d<=remain; d++) {
+    html += `<button class="dp-day other-month" onclick="dpPickDay(${DP.viewYear},${DP.viewMonth+1},${d})">${d}</button>`;
+  }
+  return html + '</div>';
+}
+
+function dpRenderMonths() {
+  return '<div class="dp-month-grid">' + MONTH_NAMES.map((m,i)=>
+    `<button class="dp-month-btn${DP.selectedDate&&i===DP.selectedDate.getMonth()&&DP.viewYear===DP.selectedDate.getFullYear()?' active':''}" onclick="dpPickMonth(${i})">${m}</button>`
+  ).join('') + '</div>';
+}
+
+function dpRenderYears(base) {
+  let html = '<div class="dp-year-grid">';
+  for (let y=base; y<base+12; y++) {
+    html += `<button class="dp-year-btn${DP.selectedDate&&y===DP.selectedDate.getFullYear()?' active':''}" onclick="dpPickYear(${y})">${y}</button>`;
+  }
+  return html + '</div>';
+}
+
+function dpPickDay(y, m, d) {
+  const date = new Date(y, m, d);
+  DP.selectedDate = date;
+  const str = pad2(date.getDate())+'/'+pad2(date.getMonth()+1)+'/'+date.getFullYear();
+  if (DP.el) DP.el.value = str;
+  if (DP.onSelect) DP.onSelect(str);
+  dpClose();
+}
+function dpPickMonth(m) { DP.viewMonth=m; DP.viewMode='days'; dpRender(); }
+function dpPickYear(y)  { DP.viewYear=y;  DP.viewMode='months'; dpRender(); }
+function dpClear() { if(DP.el) DP.el.value=''; DP.selectedDate=null; dpClose(); }
+function dpSelectToday() { const n=new Date(); dpPickDay(n.getFullYear(),n.getMonth(),n.getDate()); }
+function pad2(n) { return String(n).padStart(2,'0'); }
+
 </script>
 
 <!-- PWA -->
@@ -1201,6 +1447,10 @@ function pad(n){return String(n).padStart(2,'0');}
     <button class="sheet-menu-item" onclick="closeUserOv();goPage('baocao')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
       Báo cáo
+    </button>
+    <button class="sheet-menu-item" onclick="closeUserOv();goPage('nhatky')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+      Nhật ký
     </button>
     <button class="sheet-menu-item" onclick="closeUserOv();goPage('nhanvien')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
