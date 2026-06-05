@@ -14,8 +14,7 @@
      CẤU HÌNH: Thay URL_API bằng URL từ Google Apps Script Deploy
      ============================================================ -->
 <script>
-  const API_URL = 'https://script.google.com/macros/s/AKfycbzhmQ_29XSNUwxnWDlt7YHkIH4E72F5-tX4L2y83JMDo54dmHj87BYaPNyp8w5M7D9F/exec
-';
+  const API_URL = 'https://script.google.com/macros/s/AKfycbzhmQ_29XSNUwxnWDlt7YHkIH4E72F5-tX4L2y83JMDo54dmHj87BYaPNyp8w5M7D9F/exec';
 </script>
 
 <style>
@@ -1341,26 +1340,33 @@ function toast(msg) {
 }
 
 // ============================================================
-// API HELPERS
+// API HELPERS — dùng GET cho tất cả (tránh CORS với Apps Script)
 // ============================================================
 async function apiGet(params) {
   if (!state.isOnline) throw new Error('offline');
   params.token = params.token || (state.user && state.user.token) || '';
   const qs = new URLSearchParams(params).toString();
-  const res = await fetch(API_URL + '?' + qs, { redirect:'follow' });
-  return res.json();
+  const res = await fetch(API_URL + '?' + qs, {
+    method: 'GET',
+    redirect: 'follow',
+    mode: 'cors',
+  });
+  const text = await res.text();
+  try { return JSON.parse(text); } catch(e) { throw new Error('Parse error: ' + text.substring(0,200)); }
 }
 
 async function apiPost(body) {
+  // Apps Script: dùng GET với query string để tránh CORS preflight
   if (!state.isOnline) throw new Error('offline');
   body.token = body.token || (state.user && state.user.token) || '';
-  const res = await fetch(API_URL, {
-    method: 'POST',
-    headers: { 'Content-Type':'application/json' },
-    body: JSON.stringify(body),
+  const qs = new URLSearchParams(body).toString();
+  const res = await fetch(API_URL + '?' + qs, {
+    method: 'GET',
     redirect: 'follow',
+    mode: 'cors',
   });
-  return res.json();
+  const text = await res.text();
+  try { return JSON.parse(text); } catch(e) { throw new Error('Parse error: ' + text.substring(0,200)); }
 }
 
 // ============================================================

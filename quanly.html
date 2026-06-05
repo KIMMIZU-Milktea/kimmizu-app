@@ -11,8 +11,7 @@
 <link rel="manifest" href="manifest-ql.json">
 
 <script>
-  const API_URL = 'https://script.google.com/macros/s/AKfycbzhmQ_29XSNUwxnWDlt7YHkIH4E72F5-tX4L2y83JMDo54dmHj87BYaPNyp8w5M7D9F/exec
-';
+  const API_URL = 'https://script.google.com/macros/s/AKfycbzhmQ_29XSNUwxnWDlt7YHkIH4E72F5-tX4L2y83JMDo54dmHj87BYaPNyp8w5M7D9F/exec';
 </script>
 
 <style>
@@ -1163,17 +1162,15 @@ document.querySelectorAll('.modal-ov').forEach(el=>el.addEventListener('click',e
 function toast(msg){const el=document.getElementById('toast');el.textContent=msg;el.classList.add('show');setTimeout(()=>el.classList.remove('show'),2500);}
 
 // ============================================================
-// API
+// API — dùng GET cho tất cả (tránh CORS với Apps Script)
 // ============================================================
 async function api(params){
   params.token=params.token||(S.user?.token||'');
-  if(params.action&&['taoCongViec','suaCongViec','xoaCongViec','taoThongBao','luuCaiDat'].includes(params.action)){
-    const res=await fetch(API_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(params),redirect:'follow'});
-    return res.json();
-  }
+  // Luôn dùng GET + query string — Apps Script xử lý action qua doGet
   const qs=new URLSearchParams(params).toString();
-  const res=await fetch(API_URL+'?'+qs,{redirect:'follow'});
-  return res.json();
+  const res=await fetch(API_URL+'?'+qs,{method:'GET',redirect:'follow',mode:'cors'});
+  const text=await res.text();
+  try{return JSON.parse(text);}catch(e){throw new Error('Parse error: '+text.substring(0,200));}
 }
 
 // ============================================================
