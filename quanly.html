@@ -1,0 +1,1160 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="KIMMIZU QL">
+<meta name="theme-color" content="#3B2314">
+<title>KIMMIZU - Quản Lý</title>
+<link rel="manifest" href="manifest-ql.json">
+
+<script>
+  const API_URL = 'https://script.google.com/macros/s/AKfycbzhmQ_29XSNUwxnWDlt7YHkIH4E72F5-tX4L2y83JMDo54dmHj87BYaPNyp8w5M7D9F/exec';
+</script>
+
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html{font-size:15px;height:100%}
+body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:#F0E6D0;color:#3B2314;min-height:100%;overflow-x:hidden}
+button,input,select,textarea{font-family:inherit}
+button{cursor:pointer}
+
+:root{
+  --cream:#F5E6C8;--cream-bg:#F0E6D0;--cream-dark:#E8D5A3;--cream-light:#FDF8EF;
+  --brown:#3B2314;--brown-mid:#6B3F26;--brown-light:#A0622A;--brown-pale:#C49A6C;
+  --white:#FFFFFF;--green:#2E7D32;--green-bg:#E8F5E9;
+  --orange:#E65100;--orange-bg:#FFF3E0;
+  --red:#C62828;--red-bg:#FFEBEE;
+  --blue:#1565C0;--blue-bg:#E3F2FD;--purple:#6A1B9A;
+  --sidebar-w:220px;--header-h:56px;--nav-h:62px;
+  --radius:10px;--radius-sm:7px;--radius-pill:50px;
+  --shadow:0 2px 8px rgba(59,35,20,0.10);--shadow-md:0 4px 20px rgba(59,35,20,0.15);
+}
+
+/* ===== LOADING ===== */
+#loading{position:fixed;inset:0;background:var(--brown);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;transition:opacity .4s}
+#loading.hide{opacity:0;pointer-events:none}
+.loading-brand{font-size:40px;font-weight:800;color:var(--cream);letter-spacing:4px;margin-bottom:6px}
+.loading-sub{font-size:13px;color:var(--brown-pale)}
+.spinner{width:28px;height:28px;border:3px solid rgba(245,230,200,0.2);border-top-color:var(--cream);border-radius:50%;animation:spin .8s linear infinite;margin-top:28px}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ===== LOGIN ===== */
+#screen-login{display:none;min-height:100vh;background:var(--brown);align-items:center;justify-content:center;padding:32px 20px}
+#screen-login.active{display:flex}
+.login-wrap{width:100%;max-width:360px}
+.login-logo{text-align:center;margin-bottom:36px}
+.login-logo .brand{font-size:36px;font-weight:800;color:var(--cream);letter-spacing:3px}
+.login-logo .role-tag{font-size:12px;color:var(--brown-pale);background:rgba(245,230,200,0.12);padding:4px 14px;border-radius:20px;display:inline-block;margin-top:8px}
+.login-card{background:var(--cream-light);border-radius:16px;padding:28px 24px;box-shadow:0 8px 32px rgba(0,0,0,0.3)}
+.login-card h2{font-size:17px;font-weight:600;color:var(--brown);margin-bottom:20px}
+.form-lbl{display:block;font-size:12px;color:var(--brown-mid);font-weight:500;margin-bottom:5px}
+.form-inp{width:100%;padding:11px 14px;border:1.5px solid var(--cream-dark);border-radius:var(--radius-sm);background:#fff;font-size:15px;color:var(--brown);outline:none;transition:border-color .2s}
+.form-inp:focus{border-color:var(--brown-light)}
+.btn-login{width:100%;padding:13px;background:var(--brown);color:var(--cream);border:none;border-radius:var(--radius-sm);font-size:15px;font-weight:600;margin-top:6px}
+.login-err{color:var(--red);font-size:13px;text-align:center;margin-top:10px;display:none}
+.login-err.show{display:block}
+.form-grp{margin-bottom:14px}
+
+/* ===== APP SHELL ===== */
+#screen-app{display:none}
+#screen-app.active{display:flex;min-height:100vh}
+
+/* ===== SIDEBAR (desktop) ===== */
+.sidebar{width:var(--sidebar-w);background:var(--brown);min-height:100vh;display:flex;flex-direction:column;position:fixed;left:0;top:0;bottom:0;z-index:200;transition:transform .25s}
+.sb-logo{padding:18px 18px 14px;border-bottom:1px solid rgba(245,230,200,0.1)}
+.sb-brand{font-size:20px;font-weight:800;color:var(--cream);letter-spacing:2px}
+.sb-sub{font-size:11px;color:var(--brown-pale);margin-top:2px}
+.sb-nav{flex:1;padding:10px 0}
+.sb-item{display:flex;align-items:center;gap:10px;padding:11px 18px;color:var(--brown-pale);font-size:13px;font-weight:500;cursor:pointer;border-left:3px solid transparent;transition:all .15s;border:none;background:none;width:100%;text-align:left}
+.sb-item:hover{color:var(--cream);background:rgba(245,230,200,0.07)}
+.sb-item.active{color:var(--cream-dark);border-left:3px solid var(--cream-dark);background:rgba(245,230,200,0.1)}
+.sb-item svg{width:16px;height:16px;stroke-width:1.8;flex-shrink:0}
+.sb-sep{height:1px;background:rgba(245,230,200,0.08);margin:6px 16px}
+.sb-footer{padding:14px 16px;border-top:1px solid rgba(245,230,200,0.1)}
+.sb-user{display:flex;align-items:center;gap:10px}
+.sb-avatar{width:34px;height:34px;border-radius:50%;background:var(--brown-light);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:var(--cream);flex-shrink:0}
+.sb-name{font-size:13px;color:var(--cream);font-weight:500}
+.sb-role{font-size:11px;color:var(--brown-pale)}
+.btn-logout{margin-top:10px;width:100%;padding:8px;background:rgba(245,230,200,0.08);border:1px solid rgba(245,230,200,0.15);border-radius:var(--radius-sm);color:var(--brown-pale);font-size:12px;cursor:pointer}
+.btn-logout:hover{color:var(--cream);background:rgba(245,230,200,0.15)}
+
+/* ===== MAIN CONTENT ===== */
+.main{margin-left:var(--sidebar-w);flex:1;display:flex;flex-direction:column;min-height:100vh}
+
+/* ===== TOPBAR ===== */
+.topbar{background:var(--cream-light);border-bottom:1px solid var(--cream-dark);padding:0 20px;height:var(--header-h);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+.topbar-left{display:flex;align-items:center;gap:12px}
+.topbar-title{font-size:17px;font-weight:700;color:var(--brown)}
+.topbar-date{font-size:13px;color:var(--brown-mid)}
+.btn-hamburger{display:none;padding:8px;background:none;border:none;color:var(--brown)}
+.btn-hamburger svg{width:22px;height:22px;stroke-width:2;display:block}
+.btn-refresh{padding:7px 14px;background:var(--brown);color:var(--cream);border:none;border-radius:var(--radius-sm);font-size:12px;font-weight:500;display:flex;align-items:center;gap:6px}
+.btn-refresh svg{width:13px;height:13px;stroke-width:2}
+
+/* ===== PAGES ===== */
+.page-wrap{padding:20px;flex:1}
+.page{display:none}
+.page.active{display:block}
+
+/* ===== BOTTOM NAV (mobile) ===== */
+.bottom-nav{display:none;background:var(--brown);height:var(--nav-h);flex-shrink:0;padding-bottom:env(safe-area-inset-bottom,0);position:sticky;bottom:0;z-index:100}
+.bn-item{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;color:var(--brown-pale);font-size:10px;font-weight:500;border:none;background:none;cursor:pointer;padding:8px 4px}
+.bn-item.active{color:var(--cream-dark)}
+.bn-item svg{width:20px;height:20px;stroke-width:1.8}
+.notif-wrap{position:relative}
+.notif-dot{position:absolute;top:-2px;right:-4px;width:8px;height:8px;background:#E53935;border-radius:50%;display:none}
+.notif-dot.show{display:block}
+
+/* ===== STATS GRID ===== */
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+.stat-card{background:var(--white);border-radius:var(--radius);padding:16px 18px;box-shadow:var(--shadow);border-top:3px solid var(--cream-dark);cursor:pointer;transition:transform .15s}
+.stat-card:active{transform:scale(0.97)}
+.stat-card.orange{border-top-color:#FF8F00}
+.stat-card.green{border-top-color:var(--green)}
+.stat-card.red{border-top-color:var(--red)}
+.stat-card.blue{border-top-color:var(--blue)}
+.stat-num{font-size:30px;font-weight:800;color:var(--brown);line-height:1}
+.stat-lbl{font-size:12px;color:var(--brown-mid);margin-top:4px;font-weight:500}
+
+/* ===== CARD ===== */
+.card{background:var(--white);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;margin-bottom:16px}
+.card-hd{padding:14px 18px;border-bottom:1px solid var(--cream-dark);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}
+.card-title{font-size:14px;font-weight:600;color:var(--brown)}
+.card-bd{padding:14px 18px}
+.card-bd-0{padding:0}
+
+/* ===== TABLE ===== */
+.tbl-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{background:var(--cream);color:var(--brown-mid);font-weight:600;padding:10px 14px;text-align:left;font-size:12px;white-space:nowrap}
+td{padding:10px 14px;border-bottom:1px solid #F5EBD8;color:var(--brown);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:#FDFAF4}
+
+/* ===== BADGES ===== */
+.badge{display:inline-block;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:600;white-space:nowrap}
+.b-gray{background:#F5F5F5;color:#616161}
+.b-orange{background:#FFF8E1;color:#E65100}
+.b-green{background:var(--green-bg);color:var(--green)}
+.b-red{background:var(--red-bg);color:var(--red)}
+.b-brown{background:#FFF3E0;color:#BF360C}
+.b-purple{background:#F3E5F5;color:var(--purple)}
+.b-blue{background:var(--blue-bg);color:var(--blue)}
+
+/* ===== BUTTONS ===== */
+.btn{padding:9px 16px;border-radius:var(--radius-sm);border:none;font-size:13px;font-weight:500;cursor:pointer;transition:all .15s;display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.btn svg{width:14px;height:14px;stroke-width:2;flex-shrink:0}
+.btn-primary{background:var(--brown);color:var(--cream)}
+.btn-primary:hover{background:var(--brown-mid)}
+.btn-danger{background:var(--red);color:#fff}
+.btn-ghost{background:transparent;border:1.5px solid var(--cream-dark);color:var(--brown-mid)}
+.btn-ghost:hover{border-color:var(--brown-pale);color:var(--brown)}
+.btn-sm{padding:6px 12px;font-size:12px}
+.btn-icon{padding:7px;border-radius:var(--radius-sm);background:transparent;border:none;color:var(--brown-mid);cursor:pointer;min-width:32px;min-height:32px;display:inline-flex;align-items:center;justify-content:center}
+.btn-icon:hover{background:var(--cream);color:var(--brown)}
+.btn-icon svg{width:15px;height:15px;stroke-width:2;display:block}
+
+/* ===== FILTER BAR ===== */
+.filter-bar{display:flex;gap:10px;align-items:flex-end;margin-bottom:16px;flex-wrap:wrap}
+.filter-bar .inp{max-width:180px}
+
+/* ===== FORMS ===== */
+.inp{width:100%;padding:9px 12px;border:1.5px solid var(--cream-dark);border-radius:var(--radius-sm);background:#fff;font-size:14px;color:var(--brown);outline:none;transition:border-color .2s}
+.inp:focus{border-color:var(--brown-light)}
+select.inp{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' fill='none'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236B3F26' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center}
+textarea.inp{resize:vertical;min-height:80px}
+.form-grp2{margin-bottom:14px}
+.form-grp2 label{display:block;font-size:12px;color:var(--brown-mid);font-weight:500;margin-bottom:5px}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+
+/* ===== TAB BAR ===== */
+.tab-bar{display:flex;gap:3px;background:var(--cream);border-radius:var(--radius-sm);padding:3px;margin-bottom:16px;width:fit-content}
+.tab{padding:7px 16px;border-radius:6px;font-size:13px;font-weight:500;color:var(--brown-mid);cursor:pointer;border:none;background:transparent;transition:all .15s;white-space:nowrap}
+.tab.active{background:var(--brown);color:var(--cream)}
+
+/* ===== MODAL ===== */
+.modal-ov{position:fixed;inset:0;background:rgba(59,35,20,0.5);z-index:500;display:none;align-items:center;justify-content:center;padding:16px}
+.modal-ov.open{display:flex}
+.modal{background:var(--cream-light);border-radius:16px;width:100%;max-width:520px;max-height:90vh;overflow-y:auto;box-shadow:var(--shadow-md)}
+.modal-hd{padding:18px 22px 14px;border-bottom:1px solid var(--cream-dark);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--cream-light);z-index:1}
+.modal-title{font-size:16px;font-weight:700;color:var(--brown)}
+.modal-close{background:none;border:none;color:var(--brown-pale);padding:4px;cursor:pointer;min-width:32px;min-height:32px;display:flex;align-items:center;justify-content:center}
+.modal-close svg{width:18px;height:18px;stroke-width:2}
+.modal-bd{padding:18px 22px}
+.modal-ft{padding:0 22px 18px;display:flex;gap:10px;justify-content:flex-end}
+
+/* ===== NOTIF ITEMS ===== */
+.notif-item{padding:14px 16px;border-radius:var(--radius);background:var(--white);margin-bottom:10px;border-left:4px solid var(--brown-light);box-shadow:var(--shadow)}
+.notif-title{font-size:14px;font-weight:600;color:var(--brown)}
+.notif-body{font-size:13px;color:var(--brown-mid);margin-top:3px}
+.notif-meta{font-size:12px;color:var(--brown-pale);margin-top:6px;display:flex;gap:14px;flex-wrap:wrap}
+
+/* ===== KPI ===== */
+.score-pill{display:inline-block;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:700}
+.score-a{background:#E8F5E9;color:#2E7D32}
+.score-b{background:#FFF8E1;color:#E65100}
+.score-c{background:#FFEBEE;color:#C62828}
+.bar-wrap{background:var(--cream);border-radius:4px;height:8px;overflow:hidden;min-width:80px}
+.bar-fill{height:100%;background:var(--brown);border-radius:4px;transition:width .5s}
+
+/* ===== REPORT CHART ===== */
+.chart-bars{display:flex;gap:8px;align-items:flex-end;height:90px}
+.chart-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px}
+.chart-fill{width:100%;background:var(--brown);border-radius:3px 3px 0 0;min-height:4px}
+.chart-lbl{font-size:10px;color:var(--brown-mid);text-align:center;line-height:1.2}
+.chart-num{font-size:11px;font-weight:600;color:var(--brown)}
+
+/* ===== FAB (mobile) ===== */
+.fab{position:fixed;bottom:calc(var(--nav-h) + 14px);right:16px;width:50px;height:50px;border-radius:50%;background:var(--brown);color:var(--cream);border:none;box-shadow:var(--shadow-md);display:none;align-items:center;justify-content:center;cursor:pointer;font-size:22px;z-index:150}
+.fab svg{width:22px;height:22px;stroke-width:2}
+
+/* ===== TOAST ===== */
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--brown);color:var(--cream);padding:10px 22px;border-radius:30px;font-size:14px;font-weight:500;z-index:9999;white-space:nowrap;opacity:0;transition:opacity .3s;pointer-events:none}
+.toast.show{opacity:1}
+
+/* ===== SIDEBAR OVERLAY (mobile) ===== */
+.sb-overlay{display:none;position:fixed;inset:0;background:rgba(59,35,20,0.5);z-index:199}
+.sb-overlay.open{display:block}
+
+/* ===== DASHBOARD 2-COL ===== */
+.dash-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+
+/* ===== RESPONSIVE ===== */
+
+/* Tablet (≤900px): sidebar thu nhỏ, content full */
+@media(max-width:900px){
+  .sidebar{transform:translateX(-100%)}
+  .sidebar.open{transform:translateX(0)}
+  .sb-overlay.open{display:block}
+  .main{margin-left:0}
+  .btn-hamburger{display:flex}
+  .topbar-date{display:none}
+  .stats-row{grid-template-columns:1fr 1fr}
+  .dash-grid{grid-template-columns:1fr}
+}
+
+/* Mobile (≤600px): bottom nav thay sidebar */
+@media(max-width:600px){
+  .sidebar{width:240px}
+  .bottom-nav{display:flex}
+  .main{padding-bottom:0}
+  .page-wrap{padding:14px 14px 80px}
+  .stats-row{grid-template-columns:1fr 1fr;gap:10px}
+  .stat-card{padding:14px}
+  .stat-num{font-size:26px}
+  .form-row{grid-template-columns:1fr}
+  .modal{max-width:100%;border-radius:16px}
+  .modal-ov{padding:12px}
+  .fab{display:flex}
+  .filter-bar .inp{max-width:140px;font-size:13px}
+  .topbar{padding:0 14px}
+  .card-hd{padding:12px 14px}
+  .card-bd{padding:12px 14px}
+  th,td{padding:9px 10px;font-size:12px}
+  .btn{padding:9px 14px;font-size:13px;min-height:42px}
+  .btn-sm{min-height:36px}
+}
+
+/* Chỉ laptop: full sidebar always visible */
+@media(min-width:901px){
+  .btn-hamburger{display:none}
+  .bottom-nav{display:none}
+  .fab{display:none}
+}
+</style>
+</head>
+<body>
+
+<!-- LOADING -->
+<div id="loading">
+  <div class="loading-brand">KIMMIZU</div>
+  <div class="loading-sub">Bảng điều khiển quản lý</div>
+  <div class="spinner"></div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<!-- LOGIN -->
+<div id="screen-login">
+  <div class="login-wrap">
+    <div class="login-logo">
+      <div class="brand">KIMMIZU</div>
+      <div class="role-tag">Dành cho Quản lý</div>
+    </div>
+    <div class="login-card">
+      <h2>Đăng nhập</h2>
+      <div class="form-grp">
+        <label class="form-lbl">Tên đăng nhập</label>
+        <input type="text" class="form-inp" id="login-ten" placeholder="Tên quản lý...">
+      </div>
+      <div class="form-grp">
+        <label class="form-lbl">Mật khẩu</label>
+        <input type="password" class="form-inp" id="login-mk" placeholder="6 ký tự" maxlength="6">
+      </div>
+      <button class="btn-login" onclick="doLogin()">Đăng nhập</button>
+      <div class="login-err" id="login-err">Sai tên đăng nhập hoặc mật khẩu</div>
+    </div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="screen-app">
+  <div class="sb-overlay" id="sb-overlay" onclick="closeSB()"></div>
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sb-logo">
+      <div class="sb-brand">KIMMIZU</div>
+      <div class="sb-sub">Quản lý</div>
+    </div>
+    <nav class="sb-nav">
+      <button class="sb-item active" id="sbn-dashboard" onclick="goPage('dashboard')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>Dashboard
+      </button>
+      <button class="sb-item" id="sbn-congviec" onclick="goPage('congviec')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="2"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></svg>Công việc
+      </button>
+      <button class="sb-item" id="sbn-nhanvien" onclick="goPage('nhanvien')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Nhân viên
+      </button>
+      <button class="sb-item" id="sbn-thongbao" onclick="goPage('thongbao')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>Thông báo
+        <span class="notif-dot" id="sbn-notif-dot"></span>
+      </button>
+      <div class="sb-sep"></div>
+      <button class="sb-item" id="sbn-kpi" onclick="goPage('kpi')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>KPI
+      </button>
+      <button class="sb-item" id="sbn-baocao" onclick="goPage('baocao')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>Báo cáo
+      </button>
+      <button class="sb-item" id="sbn-caidat" onclick="goPage('caidat')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Cài đặt
+      </button>
+    </nav>
+    <div class="sb-footer">
+      <div class="sb-user">
+        <div class="sb-avatar" id="sb-av">Q</div>
+        <div><div class="sb-name" id="sb-name">Quản lý</div><div class="sb-role">Administrator</div></div>
+      </div>
+      <button class="btn-logout" onclick="doLogout()">Đăng xuất</button>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <div class="main">
+    <!-- TOPBAR -->
+    <div class="topbar">
+      <div class="topbar-left">
+        <button class="btn-hamburger" onclick="openSB()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        </button>
+        <span class="topbar-title" id="topbar-title">Dashboard</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px">
+        <span class="topbar-date" id="topbar-date"></span>
+        <button class="btn btn-primary btn-sm btn-refresh" onclick="refreshPage()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>Làm mới
+        </button>
+      </div>
+    </div>
+
+    <!-- PAGES -->
+    <div class="page-wrap">
+
+      <!-- DASHBOARD -->
+      <div class="page active" id="page-dashboard">
+        <div class="stats-row">
+          <div class="stat-card orange" onclick="goPageFilter('congviec','Chưa làm')">
+            <div class="stat-num" id="d-chua">0</div>
+            <div class="stat-lbl">Chưa làm</div>
+          </div>
+          <div class="stat-card blue" onclick="goPageFilter('congviec','Đang làm')">
+            <div class="stat-num" id="d-dang">0</div>
+            <div class="stat-lbl">Đang làm</div>
+          </div>
+          <div class="stat-card green" onclick="goPageFilter('congviec','Hoàn thành')">
+            <div class="stat-num" id="d-hoan">0</div>
+            <div class="stat-lbl">Hoàn thành</div>
+          </div>
+          <div class="stat-card red" onclick="goPageFilter('congviec','Trả việc')">
+            <div class="stat-num" id="d-tra">0</div>
+            <div class="stat-lbl">Trả việc</div>
+          </div>
+        </div>
+        <div class="dash-grid">
+          <div class="card">
+            <div class="card-hd"><span class="card-title">Đang làm</span><span class="badge b-orange" id="d-dang-badge">0</span></div>
+            <div class="card-bd-0">
+              <div class="tbl-wrap"><table>
+                <thead><tr><th>Công việc</th><th>Nhân viên</th><th>Nhận lúc</th></tr></thead>
+                <tbody id="d-dang-tbl"></tbody>
+              </table></div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-hd"><span class="card-title">Chưa có người nhận</span><span class="badge b-gray" id="d-chua-badge">0</span></div>
+            <div class="card-bd-0">
+              <div class="tbl-wrap"><table>
+                <thead><tr><th>Công việc</th><th>Loại</th><th>Ưu tiên</th></tr></thead>
+                <tbody id="d-chua-tbl"></tbody>
+              </table></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CÔNG VIỆC -->
+      <div class="page" id="page-congviec">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:10px">
+          <div class="tab-bar" style="margin-bottom:0">
+            <button class="tab active" onclick="switchCVTab('',this)">Tất cả</button>
+            <button class="tab" onclick="switchCVTab('Ca',this)">Ca</button>
+            <button class="tab" onclick="switchCVTab('Định kỳ',this)">Định kỳ</button>
+            <button class="tab" onclick="switchCVTab('Phát sinh',this)">Phát sinh</button>
+          </div>
+          <button class="btn btn-primary" onclick="openModalCV()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Tạo việc
+          </button>
+        </div>
+        <div class="filter-bar">
+          <div><label style="font-size:11px;color:var(--brown-mid);display:block;margin-bottom:3px">Ngày</label>
+          <input type="date" class="inp" id="cv-ng" style="max-width:160px" onchange="loadCV()"></div>
+          <div><label style="font-size:11px;color:var(--brown-mid);display:block;margin-bottom:3px">Trạng thái</label>
+          <select class="inp" id="cv-tt" style="max-width:160px" onchange="loadCV()">
+            <option value="">Tất cả</option>
+            <option>Chưa làm</option><option>Đang làm</option><option>Hoàn thành</option><option>Trả việc</option>
+          </select></div>
+          <div><label style="font-size:11px;color:var(--brown-mid);display:block;margin-bottom:3px">Ca</label>
+          <select class="inp" id="cv-ca-f" style="max-width:130px" onchange="loadCV()">
+            <option value="">Tất cả ca</option>
+            <option>Sáng</option><option>Trưa</option><option>Chiều</option><option>Tối</option>
+          </select></div>
+        </div>
+        <div class="card">
+          <div class="card-bd-0"><div class="tbl-wrap">
+            <table><thead><tr><th>Tên việc</th><th>Loại</th><th>Ca</th><th>Trạng thái</th><th>Nhân viên</th><th>Ưu tiên</th><th>Ngày</th><th style="width:80px"></th></tr></thead>
+            <tbody id="cv-tbl"></tbody></table>
+          </div></div>
+        </div>
+      </div>
+
+      <!-- NHÂN VIÊN -->
+      <div class="page" id="page-nhanvien">
+        <div class="card">
+          <div class="card-hd"><span class="card-title">Danh sách nhân viên</span><span style="font-size:12px;color:var(--brown-mid)" id="nv-count"></span></div>
+          <div class="card-bd-0"><div class="tbl-wrap">
+            <table><thead><tr><th>ID</th><th>Tên</th><th>Vai trò</th><th>Trạng thái</th></tr></thead>
+            <tbody id="nv-tbl"></tbody></table>
+          </div></div>
+        </div>
+      </div>
+
+      <!-- THÔNG BÁO -->
+      <div class="page" id="page-thongbao">
+        <div style="display:flex;justify-content:flex-end;margin-bottom:16px">
+          <button class="btn btn-primary" onclick="openModalTB()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Tạo thông báo
+          </button>
+        </div>
+        <div id="tb-list"></div>
+      </div>
+
+      <!-- KPI -->
+      <div class="page" id="page-kpi">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap">
+          <div class="tab-bar" style="margin-bottom:0">
+            <button class="tab active" onclick="switchKPI('tuan',this)">Tuần này</button>
+            <button class="tab" onclick="switchKPI('thang',this)">Tháng này</button>
+          </div>
+          <span style="font-size:13px;color:var(--brown-mid)" id="kpi-period"></span>
+        </div>
+        <div class="card">
+          <div class="card-hd"><span class="card-title">Bảng xếp hạng KPI</span></div>
+          <div class="card-bd-0"><div class="tbl-wrap">
+            <table><thead><tr><th>#</th><th>Nhân viên</th><th>Điểm</th><th>Xếp loại</th><th>HT</th><th>TV</th><th>TB(ph)</th><th>Tiến độ</th></tr></thead>
+            <tbody id="kpi-tbl"></tbody></table>
+          </div></div>
+        </div>
+        <div class="card" style="margin-top:14px">
+          <div class="card-hd"><span class="card-title">Trọng số KPI</span></div>
+          <div class="card-bd" id="kpi-ts-info"></div>
+        </div>
+      </div>
+
+      <!-- BÁO CÁO -->
+      <div class="page" id="page-baocao">
+        <div class="card" style="margin-bottom:18px">
+          <div class="card-bd">
+            <div class="form-row" style="align-items:flex-end;gap:12px">
+              <div class="form-grp2" style="margin-bottom:0">
+                <label>Từ ngày</label>
+                <input type="date" class="inp" id="bc-tu">
+              </div>
+              <div class="form-grp2" style="margin-bottom:0">
+                <label>Đến ngày</label>
+                <input type="date" class="inp" id="bc-den">
+              </div>
+              <button class="btn btn-primary" onclick="loadBC()" style="align-self:flex-end;white-space:nowrap">Xem báo cáo</button>
+            </div>
+          </div>
+        </div>
+        <div class="stats-row" id="bc-stats" style="display:none"></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px" id="bc-charts" style="display:none">
+          <div class="card"><div class="card-hd"><span class="card-title">Theo loại việc</span></div>
+            <div class="card-bd"><div class="chart-bars" id="bc-loai"></div></div></div>
+          <div class="card"><div class="card-hd"><span class="card-title">Top nhân viên</span></div>
+            <div class="card-bd" id="bc-nv-chart"></div></div>
+        </div>
+        <div class="card" id="bc-detail" style="display:none">
+          <div class="card-hd"><span class="card-title">Chi tiết nhân viên</span></div>
+          <div class="card-bd-0"><div class="tbl-wrap">
+            <table><thead><tr><th>Nhân viên</th><th>Hoàn thành</th><th>Trả việc</th><th>Tỷ lệ</th></tr></thead>
+            <tbody id="bc-nv-tbl"></tbody></table>
+          </div></div>
+        </div>
+      </div>
+
+      <!-- CÀI ĐẶT -->
+      <div class="page" id="page-caidat">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px">
+          <div class="card">
+            <div class="card-hd"><span class="card-title">Giờ ca làm việc</span></div>
+            <div class="card-bd">
+              <div id="ca-form"></div>
+              <button class="btn btn-primary" style="width:100%;margin-top:10px;min-height:44px" onclick="saveCa()">Lưu giờ ca</button>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-hd"><span class="card-title">Trọng số KPI</span></div>
+            <div class="card-bd">
+              <p style="font-size:12px;color:var(--brown-mid);margin-bottom:14px">Tổng 3 giá trị phải = 100</p>
+              <div class="form-grp2"><label>Hoàn thành (%)</label><input type="number" class="inp" id="kw-ht" min="0" max="100" oninput="updKWSum()"></div>
+              <div class="form-grp2"><label>Không trả việc (%)</label><input type="number" class="inp" id="kw-tv" min="0" max="100" oninput="updKWSum()"></div>
+              <div class="form-grp2"><label>Tốc độ hoàn thành (%)</label><input type="number" class="inp" id="kw-td" min="0" max="100" oninput="updKWSum()"></div>
+              <div id="kw-sum" style="font-size:12px;margin-bottom:12px"></div>
+              <button class="btn btn-primary" style="width:100%;min-height:44px" onclick="saveKW()">Lưu trọng số</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- end page-wrap -->
+
+    <!-- BOTTOM NAV (mobile only) -->
+    <nav class="bottom-nav" id="bottom-nav" style="display:none">
+      <button class="bn-item active" id="bnn-dashboard" onclick="goPage('dashboard')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>Dashboard
+      </button>
+      <button class="bn-item" id="bnn-congviec" onclick="goPage('congviec')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="2"/></svg>Việc
+      </button>
+      <button class="bn-item" id="bnn-thongbao" onclick="goPage('thongbao')">
+        <div class="notif-wrap">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+          <span class="notif-dot" id="bnn-notif-dot"></span>
+        </div>Thông báo
+      </button>
+      <button class="bn-item" id="bnn-kpi" onclick="goPage('kpi')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>KPI
+      </button>
+      <button class="bn-item" id="bnn-more" onclick="openSB()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>Thêm
+      </button>
+    </nav>
+  </div><!-- end main -->
+</div><!-- end screen-app -->
+
+<!-- FAB tạo việc (mobile - trang công việc) -->
+<button class="fab" id="fab-cv" onclick="openModalCV()">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+</button>
+
+<!-- MODAL: TẠO / SỬA CÔNG VIỆC -->
+<div class="modal-ov" id="modal-cv">
+  <div class="modal">
+    <div class="modal-hd">
+      <span class="modal-title" id="modal-cv-title">Tạo công việc</span>
+      <button class="modal-close" onclick="closeM('modal-cv')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div class="modal-bd">
+      <input type="hidden" id="cv-edit-id">
+      <div class="form-grp2" style="grid-column:1/-1">
+        <label>Tên công việc *</label>
+        <input type="text" class="inp" id="cv-ten" placeholder="Nhập tên việc...">
+      </div>
+      <div class="form-grp2"><label>Mô tả</label><textarea class="inp" id="cv-mota" placeholder="Mô tả chi tiết..."></textarea></div>
+      <div class="form-row">
+        <div class="form-grp2"><label>Loại việc</label>
+          <select class="inp" id="cv-loai" onchange="toggleCVF()">
+            <option>Ca</option><option>Định kỳ</option><option>Phát sinh</option>
+          </select>
+        </div>
+        <div class="form-grp2" id="cv-ca-grp"><label>Ca</label>
+          <select class="inp" id="cv-ca"><option>Sáng</option><option>Trưa</option><option>Chiều</option><option>Tối</option></select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-grp2"><label>Ngày thực hiện</label><input type="date" class="inp" id="cv-ngay"></div>
+        <div class="form-grp2"><label>Ưu tiên</label>
+          <select class="inp" id="cv-uu"><option>Bình thường</option><option>Cao</option><option>Khẩn</option><option>Thấp</option></select>
+        </div>
+      </div>
+      <div class="form-row" id="cv-dk-grp" style="display:none">
+        <div class="form-grp2"><label>Chu kỳ</label>
+          <select class="inp" id="cv-ck"><option>Hàng tuần</option><option>Hàng tháng</option></select>
+        </div>
+        <div class="form-grp2"><label>Thứ / Ngày</label>
+          <input type="number" class="inp" id="cv-ck-n" placeholder="VD: 2 (T2) / 1 (ngày 1)">
+        </div>
+      </div>
+      <div class="form-grp2"><label>Hạn chót</label><input type="date" class="inp" id="cv-han"></div>
+    </div>
+    <div class="modal-ft">
+      <button class="btn btn-ghost" onclick="closeM('modal-cv')">Huỷ</button>
+      <button class="btn btn-primary" onclick="submitCV()" style="min-height:44px;min-width:120px">Lưu việc</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: THÔNG BÁO -->
+<div class="modal-ov" id="modal-tb">
+  <div class="modal">
+    <div class="modal-hd">
+      <span class="modal-title">Tạo thông báo</span>
+      <button class="modal-close" onclick="closeM('modal-tb')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div class="modal-bd">
+      <div class="form-grp2"><label>Tiêu đề *</label><input type="text" class="inp" id="tb-td" placeholder="Tiêu đề thông báo..."></div>
+      <div class="form-grp2"><label>Nội dung *</label><textarea class="inp" id="tb-nd" placeholder="Nội dung..."></textarea></div>
+      <div class="form-grp2"><label>Gửi cho</label>
+        <select class="inp" id="tb-nr"><option value="Tất cả">Tất cả nhân viên</option></select>
+      </div>
+    </div>
+    <div class="modal-ft">
+      <button class="btn btn-ghost" onclick="closeM('modal-tb')">Huỷ</button>
+      <button class="btn btn-primary" onclick="submitTB()" style="min-height:44px;min-width:120px">Gửi</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: XOÁ -->
+<div class="modal-ov" id="modal-xoa">
+  <div class="modal" style="max-width:360px">
+    <div class="modal-hd"><span class="modal-title">Xác nhận xoá</span>
+      <button class="modal-close" onclick="closeM('modal-xoa')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div class="modal-bd"><p style="font-size:14px;color:var(--brown-mid)">Bạn có chắc muốn xoá công việc này? Hành động không thể hoàn tác.</p></div>
+    <div class="modal-ft">
+      <button class="btn btn-ghost" onclick="closeM('modal-xoa')">Huỷ</button>
+      <button class="btn btn-danger" onclick="confirmXoa()" style="min-height:44px">Xoá</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// STATE
+// ============================================================
+const S = { user:null, page:'dashboard', kpiTab:'tuan', cvLoai:'', xoaId:null, nvList:[], caiDat:{} };
+
+// ============================================================
+// INIT
+// ============================================================
+window.addEventListener('load', async () => {
+  setDate();
+  setTimeout(() => document.getElementById('loading').classList.add('hide'), 1000);
+  checkMobile();
+  window.addEventListener('resize', checkMobile);
+  const saved = localStorage.getItem('kimmizu_ql');
+  if (saved) {
+    try {
+      S.user = JSON.parse(saved);
+      if (S.user.vaiTro !== 'Quản lý') throw new Error();
+      await initApp();
+    } catch(e) { localStorage.removeItem('kimmizu_ql'); showLogin(); }
+  } else showLogin();
+});
+
+function checkMobile() {
+  const isMobile = window.innerWidth <= 600;
+  document.getElementById('bottom-nav').style.display = isMobile ? 'flex' : 'none';
+}
+
+function setDate() {
+  const d = new Date();
+  const days = ['Chủ nhật','Thứ hai','Thứ ba','Thứ tư','Thứ năm','Thứ sáu','Thứ bảy'];
+  document.getElementById('topbar-date').textContent = days[d.getDay()]+', '+pad(d.getDate())+'/'+pad(d.getMonth()+1)+'/'+d.getFullYear();
+}
+
+function showLogin() { document.getElementById('screen-login').classList.add('active'); }
+
+async function initApp() {
+  document.getElementById('screen-login').classList.remove('active');
+  document.getElementById('screen-app').classList.add('active');
+  document.getElementById('sb-name').textContent = S.user.tenNV;
+  document.getElementById('sb-av').textContent   = S.user.tenNV.charAt(0).toUpperCase();
+  const today = toInput(new Date());
+  document.getElementById('cv-ng').value  = today;
+  document.getElementById('cv-ngay').value = today;
+  document.getElementById('bc-tu').value  = today;
+  document.getElementById('bc-den').value = today;
+  await Promise.all([loadCaiDat(), loadNV()]);
+  loadDashboard();
+  // Refresh thông báo định kỳ
+  setInterval(checkNotif, 60000);
+}
+
+// ============================================================
+// AUTH
+// ============================================================
+async function doLogin() {
+  const tenNV=document.getElementById('login-ten').value.trim();
+  const mk=document.getElementById('login-mk').value.trim();
+  const err=document.getElementById('login-err');
+  err.classList.remove('show');
+  if(!tenNV||!mk){err.textContent='Vui lòng nhập đầy đủ';err.classList.add('show');return;}
+  const btn=document.querySelector('.btn-login');
+  btn.textContent='...';btn.disabled=true;
+  try{
+    const res=await api({action:'login',tenNV,matKhau:mk});
+    if(res.success&&res.user.vaiTro==='Quản lý'){
+      S.user=res.user;localStorage.setItem('kimmizu_ql',JSON.stringify(res.user));initApp();
+    }else{
+      err.textContent=res.user?.vaiTro&&res.user.vaiTro!=='Quản lý'?'Tài khoản không có quyền quản lý':(res.error||'Sai thông tin');
+      err.classList.add('show');
+    }
+  }catch(e){err.textContent='Lỗi kết nối';err.classList.add('show');}
+  btn.textContent='Đăng nhập';btn.disabled=false;
+}
+function doLogout(){localStorage.removeItem('kimmizu_ql');location.reload();}
+document.getElementById('login-mk').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
+
+// ============================================================
+// NAVIGATION
+// ============================================================
+const PAGE_TITLES={dashboard:'Dashboard',congviec:'Công việc',nhanvien:'Nhân viên',thongbao:'Thông báo',kpi:'KPI',baocao:'Báo cáo',caidat:'Cài đặt'};
+const PAGES=['dashboard','congviec','nhanvien','thongbao','kpi','baocao','caidat'];
+
+function goPage(p){
+  S.page=p;
+  PAGES.forEach(id=>{
+    document.getElementById('page-'+id).classList.toggle('active',id===p);
+    const sbn=document.getElementById('sbn-'+id);if(sbn)sbn.classList.toggle('active',id===p);
+    const bnn=document.getElementById('bnn-'+id);if(bnn)bnn.classList.toggle('active',id===p);
+  });
+  document.getElementById('topbar-title').textContent=PAGE_TITLES[p]||p;
+  // FAB chỉ hiện ở trang công việc trên mobile
+  document.getElementById('fab-cv').style.display=(p==='congviec'&&window.innerWidth<=600)?'flex':'none';
+  closeSB();
+  switch(p){
+    case'dashboard':loadDashboard();break;
+    case'congviec':loadCV();break;
+    case'nhanvien':renderNV();break;
+    case'thongbao':loadTB();break;
+    case'kpi':loadKPI();break;
+    case'caidat':renderCaiDat();break;
+  }
+}
+
+function goPageFilter(p,tt){
+  document.getElementById('cv-tt').value=tt;
+  goPage(p);
+}
+
+function refreshPage(){goPage(S.page);}
+function openSB(){document.getElementById('sidebar').classList.add('open');document.getElementById('sb-overlay').classList.add('open');}
+function closeSB(){document.getElementById('sidebar').classList.remove('open');document.getElementById('sb-overlay').classList.remove('open');}
+
+// ============================================================
+// DASHBOARD
+// ============================================================
+async function loadDashboard(){
+  try{
+    const res=await api({action:'getDashboard',ngay:fmtDate(new Date())});
+    if(!res.success)return;
+    const{stats,viecDangLam,viecChuaLam}=res;
+    document.getElementById('d-chua').textContent=stats.chuaLam||0;
+    document.getElementById('d-dang').textContent=stats.dangLam||0;
+    document.getElementById('d-hoan').textContent=stats.hoanThanh||0;
+    document.getElementById('d-tra').textContent=stats.traViec||0;
+    document.getElementById('d-dang-badge').textContent=stats.dangLam||0;
+    document.getElementById('d-chua-badge').textContent=stats.chuaLam||0;
+    const dangEl=document.getElementById('d-dang-tbl');
+    dangEl.innerHTML=viecDangLam?.length
+      ?viecDangLam.map(v=>`<tr><td style="font-weight:500">${v.tenViec}</td><td style="color:var(--brown-light);font-weight:500">${v.nguoiNhan}</td><td style="font-size:11px;color:var(--brown-pale)">${v.thoiGianNhan||''}</td></tr>`).join('')
+      :'<tr><td colspan="3" style="text-align:center;color:#999;padding:18px">Chưa có ai đang làm</td></tr>';
+    const chuaEl=document.getElementById('d-chua-tbl');
+    chuaEl.innerHTML=viecChuaLam?.length
+      ?viecChuaLam.slice(0,8).map(v=>`<tr><td style="font-weight:500">${v.tenViec}</td><td><span class="badge ${bLoai(v.loaiViec)}">${v.loaiViec}</span></td><td><span class="badge ${bUu(v.uuTien)}">${v.uuTien}</span></td></tr>`).join('')
+      :'<tr><td colspan="3" style="text-align:center;color:var(--green);padding:18px">✓ Tất cả đã có người nhận</td></tr>';
+  }catch(e){toast('Lỗi tải dashboard');}
+}
+
+// ============================================================
+// CÔNG VIỆC
+// ============================================================
+function switchCVTab(loai,btn){
+  S.cvLoai=loai;
+  document.querySelectorAll('#page-congviec .tab').forEach(t=>t.classList.remove('active'));
+  btn.classList.add('active');loadCV();
+}
+
+async function loadCV(){
+  const ngay=fromInput(document.getElementById('cv-ng').value);
+  const tt=document.getElementById('cv-tt').value;
+  const ca=document.getElementById('cv-ca-f').value;
+  try{
+    const p={action:'getCongViec'};
+    if(ngay)p.ngay=ngay;if(S.cvLoai)p.loai=S.cvLoai;if(ca)p.ca=ca;
+    const res=await api(p);
+    if(!res.success)return;
+    let list=res.data;
+    if(tt)list=list.filter(v=>v.trangThai===tt);
+    const tbody=document.getElementById('cv-tbl');
+    if(!list.length){tbody.innerHTML='<tr><td colspan="8" style="text-align:center;color:#999;padding:24px">Không có công việc nào</td></tr>';return;}
+    tbody.innerHTML=list.map(v=>`<tr>
+      <td style="font-weight:500;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${v.tenViec}">${v.tenViec}</td>
+      <td><span class="badge ${bLoai(v.loaiViec)}">${v.loaiViec}</span></td>
+      <td style="font-size:12px">${v.ca||'—'}</td>
+      <td><span class="badge ${bTT(v.trangThai)}">${v.trangThai}</span></td>
+      <td style="font-size:12px">${v.nguoiNhan||'—'}</td>
+      <td style="font-size:12px">${v.uuTien}</td>
+      <td style="font-size:12px;white-space:nowrap">${v.ngayThucHien}</td>
+      <td style="white-space:nowrap">
+        <button class="btn-icon" title="Sửa" onclick='openModalSuaCV(${JSON.stringify(v).replace(/'/g,"&#39;")})'>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+        </button>
+        <button class="btn-icon" title="Xoá" style="color:var(--red)" onclick="openModalXoa('${v.id}')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+        </button>
+      </td>
+    </tr>`).join('');
+  }catch(e){toast('Lỗi tải công việc');}
+}
+
+function toggleCVF(){
+  const l=document.getElementById('cv-loai').value;
+  document.getElementById('cv-ca-grp').style.display=l==='Ca'?'block':'none';
+  document.getElementById('cv-dk-grp').style.display=l==='Định kỳ'?'grid':'none';
+}
+
+function openModalCV(){
+  document.getElementById('cv-edit-id').value='';
+  document.getElementById('modal-cv-title').textContent='Tạo công việc';
+  ['cv-ten','cv-mota','cv-han','cv-ck-n'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('cv-loai').value='Ca';
+  document.getElementById('cv-uu').value='Bình thường';
+  document.getElementById('cv-ngay').value=toInput(new Date());
+  toggleCVF();
+  document.getElementById('modal-cv').classList.add('open');
+}
+
+function openModalSuaCV(v){
+  document.getElementById('cv-edit-id').value=v.id;
+  document.getElementById('modal-cv-title').textContent='Sửa công việc';
+  document.getElementById('cv-ten').value=v.tenViec;
+  document.getElementById('cv-mota').value=v.moTa||'';
+  document.getElementById('cv-loai').value=v.loaiViec;
+  document.getElementById('cv-ca').value=v.ca||'Sáng';
+  document.getElementById('cv-uu').value=v.uuTien||'Bình thường';
+  document.getElementById('cv-ngay').value=v.ngayThucHien?ddmmToInput(v.ngayThucHien):'';
+  document.getElementById('cv-han').value=v.hanChot?ddmmToInput(v.hanChot):'';
+  toggleCVF();
+  document.getElementById('modal-cv').classList.add('open');
+}
+
+async function submitCV(){
+  const id=document.getElementById('cv-edit-id').value;
+  const ten=document.getElementById('cv-ten').value.trim();
+  if(!ten){toast('Vui lòng nhập tên việc');return;}
+  const payload={
+    action:id?'suaCongViec':'taoCongViec',
+    tenViec:ten,moTa:document.getElementById('cv-mota').value.trim(),
+    loaiViec:document.getElementById('cv-loai').value,
+    ca:document.getElementById('cv-ca').value,
+    ngayThucHien:fromInput(document.getElementById('cv-ngay').value),
+    uuTien:document.getElementById('cv-uu').value,
+    hanChot:fromInput(document.getElementById('cv-han').value),
+    chuKy:document.getElementById('cv-ck').value,
+  };
+  if(id)payload.id=id;
+  try{
+    const res=await api(payload);
+    if(res.success){closeM('modal-cv');toast(id?'Đã cập nhật':'Đã tạo công việc');loadCV();}
+    else toast(res.error||'Lỗi lưu');
+  }catch(e){toast('Lỗi kết nối');}
+}
+
+function openModalXoa(id){S.xoaId=id;document.getElementById('modal-xoa').classList.add('open');}
+async function confirmXoa(){
+  try{
+    const res=await api({action:'xoaCongViec',id:S.xoaId});
+    if(res.success){closeM('modal-xoa');toast('Đã xoá');loadCV();}else toast(res.error||'Lỗi xoá');
+  }catch(e){toast('Lỗi kết nối');}
+}
+
+// ============================================================
+// NHÂN VIÊN
+// ============================================================
+async function loadNV(){
+  try{const res=await api({action:'getNhanVien'});if(res.success)S.nvList=res.data;}catch(e){}
+}
+function renderNV(){
+  const tbody=document.getElementById('nv-tbl');
+  document.getElementById('nv-count').textContent=S.nvList.length+' người';
+  if(!S.nvList.length){tbody.innerHTML='<tr><td colspan="4" style="text-align:center;padding:24px;color:#999">Chưa có dữ liệu</td></tr>';return;}
+  tbody.innerHTML=S.nvList.map(nv=>`<tr>
+    <td style="font-size:12px;color:var(--brown-pale)">${nv.id}</td>
+    <td style="font-weight:500">${nv.tenNV}</td>
+    <td><span class="badge ${nv.vaiTro==='Quản lý'?'b-brown':'b-blue'}">${nv.vaiTro}</span></td>
+    <td><span class="badge ${nv.trangThai==='Hoạt động'?'b-green':'b-red'}">${nv.trangThai}</span></td>
+  </tr>`).join('');
+  // Cập nhật select gửi thông báo
+  const sel=document.getElementById('tb-nr');
+  sel.innerHTML='<option value="Tất cả">Tất cả nhân viên</option>'+
+    S.nvList.filter(nv=>nv.vaiTro==='Nhân viên').map(nv=>`<option value="${nv.tenNV}">${nv.tenNV}</option>`).join('');
+}
+
+// ============================================================
+// THÔNG BÁO
+// ============================================================
+async function loadTB(){
+  try{
+    const res=await api({action:'getThongBao'});
+    if(!res.success)return;
+    const el=document.getElementById('tb-list');
+    if(!res.data?.length){el.innerHTML='<div style="text-align:center;padding:48px;color:var(--brown-pale)">Chưa có thông báo nào</div>';return;}
+    el.innerHTML=res.data.map(t=>`
+      <div class="notif-item">
+        <div class="notif-title">${t.tieuDe}</div>
+        <div class="notif-body">${t.noiDung}</div>
+        <div class="notif-meta">
+          <span>📅 ${t.ngayTao}</span><span>👤 ${t.nguoiNhan}</span><span>Bởi: ${t.nguoiTao}</span>
+        </div>
+      </div>`).join('');
+  }catch(e){toast('Lỗi tải thông báo');}
+}
+
+async function checkNotif(){
+  try{
+    const res=await api({action:'getThongBao'});
+    if(res.success){
+      const unread=(res.data||[]).filter(t=>!t.daDoc&&t.nguoiNhan===S.user.tenNV).length;
+      ['sbn-notif-dot','bnn-notif-dot'].forEach(id=>{
+        const el=document.getElementById(id);if(el)el.classList.toggle('show',unread>0);
+      });
+    }
+  }catch(e){}
+}
+
+function openModalTB(){
+  renderNV();
+  document.getElementById('tb-td').value='';
+  document.getElementById('tb-nd').value='';
+  document.getElementById('modal-tb').classList.add('open');
+}
+
+async function submitTB(){
+  const td=document.getElementById('tb-td').value.trim();
+  const nd=document.getElementById('tb-nd').value.trim();
+  if(!td||!nd){toast('Vui lòng nhập đầy đủ');return;}
+  try{
+    const res=await api({action:'taoThongBao',tieuDe:td,noiDung:nd,nguoiNhan:document.getElementById('tb-nr').value});
+    if(res.success){closeM('modal-tb');toast('Đã gửi thông báo');loadTB();}else toast(res.error||'Lỗi gửi');
+  }catch(e){toast('Lỗi kết nối');}
+}
+
+// ============================================================
+// KPI
+// ============================================================
+async function loadKPI(){
+  try{
+    // Load KPI từng nhân viên song song
+    const nvList=S.nvList.filter(nv=>nv.vaiTro==='Nhân viên');
+    const results=await Promise.all(nvList.map(async nv=>{
+      try{const r=await api({action:'getKPI',loai:S.kpiTab,tenNV:nv.tenNV});return r.success?r.data:null;}catch(e){return null;}
+    }));
+    const valid=results.filter(Boolean).sort((a,b)=>b.tongDiem-a.tongDiem);
+    if(valid.length){
+      const d=valid[0];
+      document.getElementById('kpi-period').textContent='Từ '+d.period.tuNgay+' đến '+d.period.denNgay;
+      const ts=d.trongSo;
+      document.getElementById('kpi-ts-info').innerHTML=`<div style="display:flex;gap:20px;font-size:13px;flex-wrap:wrap">
+        <span><span style="color:var(--brown-mid)">Hoàn thành:</span> <strong>${ts.hoanThanh}%</strong></span>
+        <span><span style="color:var(--brown-mid)">Không trả việc:</span> <strong>${ts.traViec}%</strong></span>
+        <span><span style="color:var(--brown-mid)">Tốc độ:</span> <strong>${ts.tocDo}%</strong></span>
+      </div>`;
+    }
+    document.getElementById('kpi-tbl').innerHTML=valid.map((r,i)=>{
+      const s=r.tongDiem;
+      const cls=s>=80?'score-a':s>=60?'score-b':'score-c';
+      const grade=s>=80?'Tốt':s>=60?'Khá':'Cần cải thiện';
+      return`<tr>
+        <td style="font-weight:700;color:var(--brown-pale)">${i+1}</td>
+        <td style="font-weight:600">${r.tenNV}</td>
+        <td style="font-size:20px;font-weight:800;color:var(--brown)">${s}</td>
+        <td><span class="score-pill ${cls}">${grade}</span></td>
+        <td>${r.soHoanThanh}</td>
+        <td style="color:${r.soTraViec>0?'var(--red)':'var(--green)'}">${r.soTraViec}</td>
+        <td>${r.tocDoTB}ph</td>
+        <td><div class="bar-wrap"><div class="bar-fill" style="width:${s}%"></div></div></td>
+      </tr>`;
+    }).join('');
+  }catch(e){toast('Lỗi tải KPI');}
+}
+
+function switchKPI(tab,btn){
+  S.kpiTab=tab;
+  document.querySelectorAll('#page-kpi .tab').forEach(t=>t.classList.remove('active'));
+  btn.classList.add('active');loadKPI();
+}
+
+// ============================================================
+// BÁO CÁO
+// ============================================================
+async function loadBC(){
+  const tu=fromInput(document.getElementById('bc-tu').value);
+  const den=fromInput(document.getElementById('bc-den').value);
+  if(!tu||!den){toast('Chọn khoảng thời gian');return;}
+  try{
+    const res=await api({action:'getBaoCao',tuNgay:tu,denNgay:den});
+    if(!res.success)return;
+    const d=res.data;
+    const st=document.getElementById('bc-stats');
+    st.style.display='grid';
+    st.innerHTML=`
+      <div class="stat-card"><div class="stat-num">${d.tongViec}</div><div class="stat-lbl">Tổng công việc</div></div>
+      <div class="stat-card green"><div class="stat-num">${d.hoanThanh}</div><div class="stat-lbl">Hoàn thành</div></div>
+      <div class="stat-card red"><div class="stat-num">${d.traViec}</div><div class="stat-lbl">Trả việc</div></div>
+      <div class="stat-card orange"><div class="stat-num">${d.chuaLam}</div><div class="stat-lbl">Chưa xong</div></div>`;
+    document.getElementById('bc-charts').style.display='grid';
+    const loai=d.theoLoai||{};
+    const maxL=Math.max(...Object.values(loai),1);
+    document.getElementById('bc-loai').innerHTML=Object.entries(loai).map(([k,v])=>`
+      <div class="chart-col">
+        <div class="chart-num">${v}</div>
+        <div class="chart-fill" style="height:${Math.round(v/maxL*70)+10}px"></div>
+        <div class="chart-lbl">${k}</div>
+      </div>`).join('');
+    const nvArr=Object.entries(d.theoNV||{}).sort((a,b)=>b[1].hoanThanh-a[1].hoanThanh).slice(0,5);
+    const maxNV=Math.max(...nvArr.map(x=>x[1].hoanThanh),1);
+    document.getElementById('bc-nv-chart').innerHTML=nvArr.map(([nv,st])=>`
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;font-size:13px">
+        <span style="min-width:90px;color:var(--brown);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${nv}</span>
+        <div style="flex:1;background:var(--cream);border-radius:4px;height:20px;overflow:hidden">
+          <div style="width:${Math.round(st.hoanThanh/maxNV*100)}%;height:100%;background:var(--brown);border-radius:4px;display:flex;align-items:center;justify-content:flex-end;padding-right:6px">
+            <span style="font-size:10px;color:var(--cream);font-weight:600">${st.hoanThanh}</span>
+          </div>
+        </div>
+      </div>`).join('');
+    document.getElementById('bc-detail').style.display='block';
+    document.getElementById('bc-nv-tbl').innerHTML=Object.entries(d.theoNV||{}).map(([nv,st])=>{
+      const total=st.hoanThanh+st.traViec;
+      const rate=total>0?Math.round(st.hoanThanh/total*100):0;
+      return`<tr>
+        <td style="font-weight:500">${nv}</td>
+        <td style="color:var(--green);font-weight:600">${st.hoanThanh}</td>
+        <td style="color:var(--red)">${st.traViec}</td>
+        <td><span class="badge ${rate>=80?'b-green':rate>=60?'b-orange':'b-red'}">${rate}%</span></td>
+      </tr>`;
+    }).join('');
+  }catch(e){toast('Lỗi tải báo cáo');}
+}
+
+// ============================================================
+// CÀI ĐẶT
+// ============================================================
+async function loadCaiDat(){
+  try{const res=await api({action:'getCaiDat'});if(res.success)S.caiDat=res.data;}catch(e){}
+}
+function renderCaiDat(){
+  const ca=S.caiDat.caLamViec||[
+    {ten:'Sáng',batDau:'07:00',ketThuc:'10:00'},{ten:'Trưa',batDau:'10:00',ketThuc:'14:00'},
+    {ten:'Chiều',batDau:'14:00',ketThuc:'18:00'},{ten:'Tối',batDau:'18:00',ketThuc:'22:00'},
+  ];
+  document.getElementById('ca-form').innerHTML=ca.map((c,i)=>`
+    <div class="form-row" style="margin-bottom:12px">
+      <div class="form-grp2" style="margin-bottom:0"><label>${c.ten} — Bắt đầu</label><input type="time" class="inp" id="ca-bd-${i}" value="${c.batDau}"></div>
+      <div class="form-grp2" style="margin-bottom:0"><label>Kết thúc</label><input type="time" class="inp" id="ca-kt-${i}" value="${c.ketThuc}"></div>
+    </div>`).join('');
+  const ts=S.caiDat.kpiTrongSo||{hoanThanh:60,traViec:25,tocDo:15};
+  document.getElementById('kw-ht').value=ts.hoanThanh;
+  document.getElementById('kw-tv').value=ts.traViec;
+  document.getElementById('kw-td').value=ts.tocDo;
+  updKWSum();
+}
+function updKWSum(){
+  const sum=+document.getElementById('kw-ht').value+ +document.getElementById('kw-tv').value+ +document.getElementById('kw-td').value;
+  const el=document.getElementById('kw-sum');
+  el.textContent='Tổng: '+sum+(sum===100?' ✓':' ← Phải bằng 100');
+  el.style.color=sum===100?'var(--green)':'var(--red)';
+}
+async function saveCa(){
+  const names=['Sáng','Trưa','Chiều','Tối'];
+  const caLamViec=names.map((ten,i)=>({ten,batDau:document.getElementById('ca-bd-'+i).value,ketThuc:document.getElementById('ca-kt-'+i).value}));
+  try{const res=await api({action:'luuCaiDat',key:'caLamViec',value:caLamViec});
+    if(res.success){S.caiDat.caLamViec=caLamViec;toast('Đã lưu giờ ca');}else toast(res.error||'Lỗi lưu');}
+  catch(e){toast('Lỗi kết nối');}
+}
+async function saveKW(){
+  const ht=+document.getElementById('kw-ht').value;
+  const tv=+document.getElementById('kw-tv').value;
+  const td=+document.getElementById('kw-td').value;
+  if(ht+tv+td!==100){toast('Tổng trọng số phải bằng 100');return;}
+  try{const val={hoanThanh:ht,traViec:tv,tocDo:td};
+    const res=await api({action:'luuCaiDat',key:'kpiTrongSo',value:val});
+    if(res.success){S.caiDat.kpiTrongSo=val;toast('Đã lưu trọng số KPI');}else toast(res.error||'Lỗi lưu');}
+  catch(e){toast('Lỗi kết nối');}
+}
+
+// ============================================================
+// HELPERS: BADGE
+// ============================================================
+function bLoai(l){return l==='Ca'?'b-brown':l==='Định kỳ'?'b-purple':'b-blue';}
+function bTT(t){return t==='Chưa làm'?'b-gray':t==='Đang làm'?'b-orange':t==='Hoàn thành'?'b-green':'b-red';}
+function bUu(u){return u==='Khẩn'?'b-red':u==='Cao'?'b-orange':'b-gray';}
+
+// ============================================================
+// MODAL
+// ============================================================
+function closeM(id){document.getElementById(id).classList.remove('open');}
+document.querySelectorAll('.modal-ov').forEach(el=>el.addEventListener('click',e=>{if(e.target===el)el.classList.remove('open');}));
+
+// ============================================================
+// TOAST
+// ============================================================
+function toast(msg){const el=document.getElementById('toast');el.textContent=msg;el.classList.add('show');setTimeout(()=>el.classList.remove('show'),2500);}
+
+// ============================================================
+// API
+// ============================================================
+async function api(params){
+  params.token=params.token||(S.user?.token||'');
+  if(params.action&&['taoCongViec','suaCongViec','xoaCongViec','taoThongBao','luuCaiDat'].includes(params.action)){
+    const res=await fetch(API_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(params),redirect:'follow'});
+    return res.json();
+  }
+  const qs=new URLSearchParams(params).toString();
+  const res=await fetch(API_URL+'?'+qs,{redirect:'follow'});
+  return res.json();
+}
+
+// ============================================================
+// DATE HELPERS
+// ============================================================
+function fmtDate(d){return pad(d.getDate())+'/'+pad(d.getMonth()+1)+'/'+d.getFullYear();}
+function toInput(d){return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());}
+function fromInput(s){if(!s)return'';const p=s.split('-');return p.length===3?p[2]+'/'+p[1]+'/'+p[0]:s;}
+function ddmmToInput(s){if(!s)return'';const p=s.split('/');return p.length===3?p[2]+'-'+p[1]+'-'+p[0]:s;}
+function pad(n){return String(n).padStart(2,'0');}
+</script>
+
+<!-- PWA -->
+<script>if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-ql.js').catch(()=>{});</script>
+</body>
+</html>
