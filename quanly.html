@@ -1128,19 +1128,23 @@ async function nhacNho(id, btn){
   if(!confirm('Gửi email nhắc nhở cho những người chưa đọc thông báo này?'))return;
   btn.disabled=true;
   const orig=btn.innerHTML;
-  btn.textContent='Đang gửi...';
+  btn.innerHTML='<span>Đang gửi...</span>';
   try{
     const res=await api({action:'nhacNhoThongBao',id});
     if(res.success){
-      toast('✓ '+res.message);
-      if(res.noEmail?.length) toast('⚠ '+res.noEmail.join(', ')+' chưa có email');
+      // Thông báo chi tiết kết quả
+      let msg = res.message || '';
+      if(res.sent?.length)    msg += '\n✓ Gửi thành công: ' + res.sent.join(', ');
+      if(res.failed?.length)  msg += '\n✗ Gửi thất bại: '  + res.failed.join(', ');
+      if(res.noEmail?.length) msg += '\n⚠ Chưa có email: ' + res.noEmail.join(', ') + ' (cần thêm email vào Sheet NhanVien)';
+      alert(msg);
       loadTB();
     } else {
-      toast(res.error||'Lỗi gửi email');
+      alert('Lỗi: ' + (res.error||'Không gửi được'));
       btn.disabled=false; btn.innerHTML=orig;
     }
   }catch(e){
-    toast('Lỗi kết nối');
+    toast('Lỗi kết nối: '+e.message);
     btn.disabled=false; btn.innerHTML=orig;
   }
 }
