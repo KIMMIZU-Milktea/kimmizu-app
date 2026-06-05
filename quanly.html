@@ -11,7 +11,7 @@
 <link rel="manifest" href="manifest-ql.json">
 
 <script>
-  const API_URL = 'https://script.google.com/macros/s/AKfycbzhmQ_29XSNUwxnWDlt7YHkIH4E72F5-tX4L2y83JMDo54dmHj87BYaPNyp8w5M7D9F/exec';
+  const API_URL = 'https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec';
 </script>
 
 <style>
@@ -80,6 +80,22 @@ button{cursor:pointer}
 .sb-role{font-size:11px;color:var(--brown-pale)}
 .btn-logout{margin-top:10px;width:100%;padding:8px;background:rgba(245,230,200,0.08);border:1px solid rgba(245,230,200,0.15);border-radius:var(--radius-sm);color:var(--brown-pale);font-size:12px;cursor:pointer}
 .btn-logout:hover{color:var(--cream);background:rgba(245,230,200,0.15)}
+/* ===== USER MENU OVERLAY (mobile) ===== */
+.user-ov{position:fixed;inset:0;background:rgba(59,35,20,0.5);z-index:600;display:none;align-items:flex-end}
+.user-ov.open{display:flex}
+.user-sheet{background:var(--cream-light);border-radius:20px 20px 0 0;padding:20px 20px 32px;width:100%;max-width:430px;margin:0 auto;animation:slideUp .25s ease}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.user-sheet-handle{width:40px;height:4px;border-radius:2px;background:var(--cream-dark);margin:0 auto 18px}
+.user-sheet-info{display:flex;align-items:center;gap:12px;padding:14px 16px;background:var(--brown);border-radius:var(--radius);margin-bottom:16px}
+.us-av{width:44px;height:44px;border-radius:50%;background:var(--brown-light);border:2px solid var(--cream-dark);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;color:var(--cream);flex-shrink:0}
+.us-name{font-size:16px;font-weight:700;color:var(--cream)}
+.us-role{font-size:12px;color:var(--brown-pale);margin-top:2px}
+.sheet-menu-item{display:flex;align-items:center;gap:12px;width:100%;padding:13px 16px;background:var(--white);border:none;border-radius:var(--radius-sm);font-size:14px;font-weight:500;color:var(--brown);cursor:pointer;margin-bottom:8px;text-align:left}
+.sheet-menu-item svg{width:18px;height:18px;stroke-width:2;flex-shrink:0;color:var(--brown-mid)}
+.sheet-menu-item:active{background:var(--cream)}
+.sheet-menu-logout{color:var(--red);background:var(--red-bg);border:1.5px solid var(--red)}
+.sheet-menu-logout svg{color:var(--red)}
+.sheet-menu-cancel{background:transparent;border:1.5px solid var(--cream-dark);color:var(--brown-mid);margin-top:4px}
 
 /* ===== MAIN CONTENT ===== */
 .main{margin-left:var(--sidebar-w);flex:1;display:flex;flex-direction:column;min-height:100vh}
@@ -562,7 +578,7 @@ textarea.inp{resize:vertical;min-height:80px}
       <button class="bn-item" id="bnn-kpi" onclick="goPage('kpi')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>KPI
       </button>
-      <button class="bn-item" id="bnn-more" onclick="openSB()">
+      <button class="bn-item" id="bnn-more" onclick="openUserOv()">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>Thêm
       </button>
     </nav>
@@ -731,6 +747,21 @@ async function doLogin() {
   }catch(e){err.textContent='Lỗi kết nối';err.classList.add('show');}
   btn.textContent='Đăng nhập';btn.disabled=false;
 }
+
+// ============================================================
+// USER OVERLAY (mobile menu + logout)
+// ============================================================
+function openUserOv() {
+  if (S.user) {
+    document.getElementById('uo-avatar').textContent = S.user.tenNV.charAt(0).toUpperCase();
+    document.getElementById('uo-name').textContent   = S.user.tenNV;
+  }
+  document.getElementById('user-ov').classList.add('open');
+}
+function closeUserOv() {
+  document.getElementById('user-ov').classList.remove('open');
+}
+
 function doLogout(){localStorage.removeItem('kimmizu_ql');location.reload();}
 document.getElementById('login-mk').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
 
@@ -1156,5 +1187,39 @@ function pad(n){return String(n).padStart(2,'0');}
 
 <!-- PWA -->
 <script>if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-ql.js').catch(()=>{});</script>
+
+<!-- USER MENU OVERLAY (mobile) -->
+<div class="user-ov" id="user-ov" onclick="if(event.target===this)closeUserOv()">
+  <div class="user-sheet">
+    <div class="user-sheet-handle"></div>
+    <div class="user-sheet-info">
+      <div class="us-av" id="uo-avatar">Q</div>
+      <div>
+        <div class="us-name" id="uo-name">Quản lý</div>
+        <div class="us-role">Administrator</div>
+      </div>
+    </div>
+    <!-- Các trang phụ -->
+    <button class="sheet-menu-item" onclick="closeUserOv();goPage('baocao')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+      Báo cáo
+    </button>
+    <button class="sheet-menu-item" onclick="closeUserOv();goPage('nhanvien')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+      Nhân viên
+    </button>
+    <button class="sheet-menu-item" onclick="closeUserOv();goPage('caidat')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06-.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      Cài đặt
+    </button>
+    <!-- Đăng xuất -->
+    <button class="sheet-menu-item sheet-menu-logout" onclick="doLogout()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+      Đăng xuất
+    </button>
+    <button class="sheet-menu-item sheet-menu-cancel" onclick="closeUserOv()">Huỷ</button>
+  </div>
+</div>
+
 </body>
 </html>

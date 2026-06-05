@@ -14,7 +14,7 @@
      CẤU HÌNH: Thay URL_API bằng URL từ Google Apps Script Deploy
      ============================================================ -->
 <script>
-  const API_URL = 'https://script.google.com/macros/s/AKfycbzhmQ_29XSNUwxnWDlt7YHkIH4E72F5-tX4L2y83JMDo54dmHj87BYaPNyp8w5M7D9F/exec';
+  const API_URL = 'https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec';
 </script>
 
 <style>
@@ -126,6 +126,19 @@ body{
   color:var(--cream);font-size:14px;font-weight:700;
   cursor:pointer;
 }
+
+/* ===== USER MENU SHEET ===== */
+.user-sheet-ov{position:fixed;inset:0;background:rgba(59,35,20,0.5);z-index:400;display:none;align-items:flex-end}
+.user-sheet-ov.open{display:flex}
+.user-sheet{background:var(--cream-light);border-radius:20px 20px 0 0;padding:20px 20px 32px;width:100%;animation:slideUp .25s ease}
+.user-sheet-handle{width:40px;height:4px;border-radius:2px;background:var(--cream-dark);margin:0 auto 18px}
+.user-sheet-info{display:flex;align-items:center;gap:12px;padding:14px 16px;background:var(--brown);border-radius:var(--radius);margin-bottom:16px}
+.user-sheet-av{width:44px;height:44px;border-radius:50%;background:var(--brown-light);border:2px solid var(--cream-dark);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;color:var(--cream);flex-shrink:0}
+.user-sheet-name{font-size:16px;font-weight:700;color:var(--cream)}
+.user-sheet-role{font-size:12px;color:var(--brown-pale);margin-top:2px}
+.btn-sheet-logout{width:100%;padding:14px;background:var(--red-bg);color:var(--red);border:1.5px solid var(--red);border-radius:var(--radius-sm);font-size:15px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px}
+.btn-sheet-logout svg{width:18px;height:18px;stroke-width:2}
+.btn-sheet-cancel{width:100%;padding:13px;background:transparent;border:1.5px solid var(--cream-dark);border-radius:var(--radius-sm);font-size:15px;color:var(--brown-mid);cursor:pointer;margin-top:10px}
 
 /* ===== BOTTOM NAV ===== */
 .bottom-nav{
@@ -674,7 +687,7 @@ textarea.form-input{resize:vertical;min-height:80px}
           </svg>
           <div class="notif-badge" id="notif-badge">0</div>
         </button>
-        <div class="avatar-btn" id="avatar-btn" onclick="goTab('kpi')">?</div>
+        <div class="avatar-btn" id="avatar-btn" onclick="openUserMenu()">?</div>
       </div>
     </div>
 
@@ -796,6 +809,26 @@ textarea.form-input{resize:vertical;min-height:80px}
     <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
   </svg>
 </button>
+
+
+<!-- USER MENU SHEET -->
+<div class="user-sheet-ov" id="user-sheet-ov" onclick="if(event.target===this)closeUserMenu()">
+  <div class="user-sheet">
+    <div class="user-sheet-handle"></div>
+    <div class="user-sheet-info">
+      <div class="user-sheet-av" id="us-avatar">?</div>
+      <div>
+        <div class="user-sheet-name" id="us-name">Nhân viên</div>
+        <div class="user-sheet-role" id="us-role">Nhân viên</div>
+      </div>
+    </div>
+    <button class="btn-sheet-logout" onclick="doLogout()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+      Đăng xuất
+    </button>
+    <button class="btn-sheet-cancel" onclick="closeUserMenu()">Huỷ</button>
+  </div>
+</div>
 
 <script>
 // ============================================================
@@ -1342,6 +1375,28 @@ function formatDateAPI(d) {
   const dd = String(d.getDate()).padStart(2,'0');
   const mm = String(d.getMonth()+1).padStart(2,'0');
   return dd + '/' + mm + '/' + d.getFullYear();
+}
+
+
+// ============================================================
+// USER MENU & LOGOUT
+// ============================================================
+function openUserMenu() {
+  const u = state.user;
+  if (!u) return;
+  document.getElementById('us-avatar').textContent = u.tenNV.charAt(0).toUpperCase();
+  document.getElementById('us-name').textContent   = u.tenNV;
+  document.getElementById('us-role').textContent   = u.vaiTro || 'Nhân viên';
+  document.getElementById('user-sheet-ov').classList.add('open');
+}
+function closeUserMenu() {
+  document.getElementById('user-sheet-ov').classList.remove('open');
+}
+function doLogout() {
+  localStorage.removeItem('kimmizu_user');
+  localStorage.removeItem('kimmizu_viec');
+  localStorage.removeItem('kimmizu_offline');
+  location.reload();
 }
 
 // ============================================================
