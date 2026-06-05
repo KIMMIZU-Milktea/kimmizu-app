@@ -634,8 +634,12 @@ textarea.form-input{resize:vertical;min-height:80px}
       </select>
     </div>
     <div class="form-group">
-      <label>Hạn chót</label>
-      <input type="date" class="form-input" id="ps-han-chot">
+      <label>Hạn chót <span style="font-size:11px;color:var(--brown-pale)">(dd/mm/yyyy)</span></label>
+      <input type="text" class="form-input" id="ps-han-chot"
+        placeholder="dd/mm/yyyy"
+        maxlength="10"
+        inputmode="numeric"
+        oninput="autoFormatDate(this)">
     </div>
     <button class="btn-submit" onclick="submitPhatSinh()">Tạo việc</button>
     <button class="btn-cancel" style="width:100%;margin-top:8px;padding:12px;text-align:center" onclick="closeSheet()">Huỷ</button>
@@ -1185,26 +1189,38 @@ async function submitPhatSinh() {
   const tenViec = document.getElementById('ps-ten').value.trim();
   if (!tenViec) { toast('Vui lòng nhập tên việc'); return; }
 
+  // hanChot: lấy trực tiếp dd/mm/yyyy từ text input
+  const hanChotRaw = document.getElementById('ps-han-chot').value.trim();
+  // Validate định dạng dd/mm/yyyy nếu có nhập
+  if (hanChotRaw && !/^\d{2}\/\d{2}\/\d{4}$/.test(hanChotRaw)) {
+    toast('Hạn chót không đúng định dạng dd/mm/yyyy'); return;
+  }
+
   const payload = {
-    action: 'taoViecPhatSinh',
+    action:   'taoViecPhatSinh',
     tenViec,
-    moTa:    document.getElementById('ps-mota').value.trim(),
-    uuTien:  document.getElementById('ps-uu-tien').value,
-    hanChot: document.getElementById('ps-han-chot').value,
-    localId: 'loc_'+Date.now(),
+    moTa:     document.getElementById('ps-mota').value.trim(),
+    uuTien:   document.getElementById('ps-uu-tien').value,
+    hanChot:  hanChotRaw,
   };
   closeSheet();
 
   if (!state.isOnline) {
-    addOfflineQueue(payload);
+    const offAct = { ...payload, localId: 'loc_'+Date.now() };
+    addOfflineQueue(offAct);
     toast('Đã lưu offline, sẽ đồng bộ sau'); return;
   }
   try {
     const res = await apiPost(payload);
-    if (res.success) { toast('✓ Đã tạo việc phát sinh'); await loadCongViec(); }
-    else toast(res.error || 'Lỗi tạo việc');
+    if (res.success) {
+      toast('✓ Đã tạo việc phát sinh');
+      await loadCongViec();
+    } else {
+      toast(res.error || 'Lỗi tạo việc');
+    }
   } catch(e) {
-    addOfflineQueue(payload);
+    const offAct = { ...payload, localId: 'loc_'+Date.now() };
+    addOfflineQueue(offAct);
     toast('Đã lưu offline');
   }
 }
@@ -1372,6 +1388,14 @@ async function apiPost(body) {
 // ============================================================
 // DATE HELPERS
 // ============================================================
+// Tự động thêm dấu / khi gõ ngày
+function autoFormatDate(input) {
+  let v = input.value.replace(/\D/g,'');
+  if (v.length >= 3 && v.length <= 4) v = v.slice(0,2) + '/' + v.slice(2);
+  else if (v.length >= 5) v = v.slice(0,2) + '/' + v.slice(2,4) + '/' + v.slice(4,8);
+  input.value = v;
+}
+
 function formatDateVN(d) {
   const days = ['Chủ nhật','Thứ hai','Thứ ba','Thứ tư','Thứ năm','Thứ sáu','Thứ bảy'];
   const dd = String(d.getDate()).padStart(2,'0');
