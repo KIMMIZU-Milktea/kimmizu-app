@@ -432,7 +432,22 @@ body{
 .unread-dot{
   width:8px;height:8px;border-radius:50%;
   background:var(--brown);display:inline-block;
-  margin-right:6px;vertical-align:middle;
+  margin-right:6px;vertical-align:middle;flex-shrink:0;
+}
+.btn-da-doc{
+  display:block;width:100%;
+  margin-top:12px;padding:11px;
+  background:var(--brown);color:var(--cream);
+  border:none;border-radius:var(--radius-sm);
+  font-size:13px;font-weight:600;
+  cursor:pointer;text-align:center;
+  transition:background .15s;
+}
+.btn-da-doc:active{background:var(--brown-mid)}
+.btn-da-doc:disabled{opacity:0.6;pointer-events:none}
+.notif-da-doc-label{
+  display:inline-flex;align-items:center;gap:5px;
+  margin-top:10px;font-size:12px;color:var(--green);font-weight:500;
 }
 
 /* ===== TẠO VIỆC PHÁT SINH ===== */
@@ -1302,21 +1317,61 @@ function renderThongBao(list) {
       </svg><p>Không có thông báo</p></div>`; return;
   }
   el.innerHTML = list.map(t => `
-    <div class="notif-item ${t.daDoc ? '' : 'unread'}" onclick="docThongBao('${t.id}', this)">
-      <div class="notif-title">${t.daDoc ? '' : '<span class="unread-dot"></span>'}${t.tieuDe}</div>
-      <div class="notif-body">${t.noiDung}</div>
-      <div class="notif-time">${t.ngayTao}</div>
+    <div class="notif-item ${t.daDoc ? '' : 'unread'}" id="notif-card-${t.id}">
+      <div style="display:flex;align-items:flex-start;gap:6px">
+        ${!t.daDoc ? '<span class="unread-dot" style="margin-top:5px;flex-shrink:0"></span>' : ''}
+        <div style="flex:1;min-width:0">
+          <div class="notif-title">${t.tieuDe}</div>
+          <div class="notif-body">${t.noiDung}</div>
+          <div class="notif-time">${t.ngayTao}</div>
+        </div>
+      </div>
+      ${!t.daDoc
+        ? `<button class="btn-da-doc" id="btn-doc-${t.id}" onclick="xacNhanDaDoc('${t.id}')">
+             ✓ Xác nhận đã đọc
+           </button>`
+        : `<div class="notif-da-doc-label">
+             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" width="14" height="14" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+             Đã đọc
+           </div>`
+      }
     </div>`).join('');
 }
 
-async function docThongBao(id, el) {
-  if (el && !el.classList.contains('unread')) return;
+// Xác nhận đã đọc — nhân viên bấm nút
+async function xacNhanDaDoc(id) {
+  const btn  = document.getElementById('btn-doc-' + id);
+  const card = document.getElementById('notif-card-' + id);
+  if (btn) { btn.disabled = true; btn.textContent = '...'; }
   try {
-    await apiPost({ action:'docThongBao', id });
-    el && el.classList.remove('unread');
-    el && el.querySelector('.unread-dot')?.remove();
-    await loadThongBao();
-  } catch(e) {}
+    const res = await apiGet({ action:'docThongBao', id });
+    if (res.success) {
+      toast('✓ Đã xác nhận đọc thông báo');
+      // Cập nhật card ngay không cần reload
+      if (card) {
+        card.classList.remove('unread');
+        const dot = card.querySelector('.unread-dot');
+        if (dot) dot.remove();
+      }
+      if (btn) btn.outerHTML = `<div class="notif-da-doc-label">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" width="14" height="14" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+        Đã đọc
+      </div>`;
+      // Cập nhật badge số chưa đọc
+      await loadThongBao();
+    } else {
+      if (btn) { btn.disabled = false; btn.textContent = '✓ Xác nhận đã đọc'; }
+      toast(res.error || 'Lỗi. Thử lại.');
+    }
+  } catch(e) {
+    if (btn) { btn.disabled = false; btn.textContent = '✓ Xác nhận đã đọc'; }
+    toast('Lỗi kết nối');
+  }
+}
+
+// Gọi nội bộ (không dùng nữa nhưng giữ để tương thích)
+async function docThongBao(id) {
+  try { await apiGet({ action:'docThongBao', id }); } catch(e) {}
 }
 
 // ============================================================
