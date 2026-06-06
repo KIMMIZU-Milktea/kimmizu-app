@@ -71,14 +71,13 @@
 
 /* ===== RESET & BASE ===== */
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-html{font-size:16px}
-body{
+html,body{
+  margin:0;padding:0;
+  width:100%;height:100%;
+  overflow:hidden;
   font-family:'Segoe UI',system-ui,-apple-system,sans-serif;
   background:#F5E6C8;
   color:#3B2314;
-  margin:0;padding:0;
-  overflow:hidden;
-  /* Không dùng position:fixed — làm hỏng scroll trên iOS */
 }
 
 /* ===== CSS VARIABLES ===== */
@@ -110,9 +109,8 @@ body{
 
 /* ===== APP SHELL ===== */
 #app{
-  /* dvh = dynamic viewport height — tự điều chỉnh theo thanh Safari */
-  height:100vh;
-  height:100dvh;
+  position:fixed;
+  top:0;left:0;right:0;bottom:0;
   display:flex;
   flex-direction:column;
   max-width:430px;
@@ -126,9 +124,12 @@ body{
   display:none;
   flex-direction:column;
   flex:1;
-  min-height:0; /* quan trọng: cho phép flex child co lại */
+  min-height:0;
+  overflow:hidden;
 }
-.screen.active{display:flex}
+.screen.active{
+  display:flex;
+}
 
 /* ===== HEADER ===== */
 .header{
@@ -215,13 +216,13 @@ body{
 /* ===== SCROLL CONTENT ===== */
 .scroll-content{
   flex:1;
-  overflow-y:auto;
+  flex-direction:column; /* là flex container lẫn flex item */
+  overflow-y:scroll;
   overflow-x:hidden;
-  padding:16px;
-  padding-bottom:32px;
   -webkit-overflow-scrolling:touch;
   overscroll-behavior-y:contain;
-  min-height:0; /* quan trọng cho flexbox */
+  padding:16px;
+  padding-bottom:32px;
 }
 
 /* ===== LOGIN SCREEN ===== */
@@ -1481,7 +1482,7 @@ function updateViecLocal(id, trangThai, nguoiNhan) {
 function goTab(tab) {
   const tabs = ['home','notif','kpi'];
   tabs.forEach(t => {
-    document.getElementById('tab-'+t).style.display = t === tab ? 'block' : 'none';
+    document.getElementById('tab-'+t).style.display = t === tab ? 'flex' : 'none';
     const nav = document.getElementById('nav-'+t);
     if (nav) nav.classList.toggle('active', t === tab);
   });
