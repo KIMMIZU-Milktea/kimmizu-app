@@ -822,6 +822,17 @@ async function initApp() {
   document.getElementById('bc-den').value = today;
   await Promise.all([loadCaiDat(), loadNV()]);
   loadDashboard();
+  // Auto-refresh: cập nhật dữ liệu trang hiện tại mỗi 60 giây
+  setInterval(()=>{
+    if(document.visibilityState==='visible'){
+      switch(S.page){
+        case'dashboard': loadDashboard(); break;
+        case'congviec':  loadCV();  break;
+        case'thongbao':  loadTB();  break;
+        case'kpi':       /* KPI ít thay đổi, bỏ qua */ break;
+      }
+    }
+  }, 60000);
   // Refresh thông báo định kỳ
   setInterval(checkNotif, 60000);
 }
@@ -894,7 +905,7 @@ function goPage(p){
   switch(p){
     case'dashboard':loadDashboard();break;
     case'congviec':loadCV();break;
-    case'nhanvien':renderNV();break;
+    case'nhanvien':loadNV();break;
     case'thongbao':loadTB();break;
     case'kpi':loadKPI();break;
     case'nhatky':loadNhatKy();break;
@@ -1026,16 +1037,29 @@ async function submitCV(){
   if(id)payload.id=id;
   try{
     const res=await api(payload);
-    if(res.success){closeM('modal-cv');toast(id?'Đã cập nhật':'Đã tạo công việc');loadCV();}
+    if(res.success){
+      closeM('modal-cv');
+      toast(id?'Đã cập nhật công việc ✓':'Đã tạo công việc ✓');
+      // Đặt filter ngày về ngày của việc vừa tạo/sửa để hiển thị ngay
+      const ngayViec = payload.ngayThucHien || fmtDate(new Date());
+      document.getElementById('cv-ng').value = ngayViec;
+      // Xoá filter trạng thái để thấy tất cả
+      document.getElementById('cv-tt').value = '';
+      await loadCV();
+    }
     else toast(res.error||'Lỗi lưu');
-  }catch(e){toast('Lỗi kết nối');}
+  }catch(e){toast('Lỗi kết nối: '+e.message);}
 }
 
 function openModalXoa(id){S.xoaId=id;document.getElementById('modal-xoa').classList.add('open');}
 async function confirmXoa(){
   try{
     const res=await api({action:'xoaCongViec',id:S.xoaId});
-    if(res.success){closeM('modal-xoa');toast('Đã xoá');loadCV();}else toast(res.error||'Lỗi xoá');
+    if(res.success){
+      closeM('modal-xoa');
+      toast('Đã xoá công việc');
+      await loadCV();
+    }else toast(res.error||'Lỗi xoá');
   }catch(e){toast('Lỗi kết nối');}
 }
 
@@ -1043,7 +1067,14 @@ async function confirmXoa(){
 // NHÂN VIÊN
 // ============================================================
 async function loadNV(){
-  try{const res=await api({action:'getNhanVien'});if(res.success)S.nvList=res.data;}catch(e){}
+  try{
+    const res=await api({action:'getNhanVien'});
+    if(res.success){
+      S.nvList=res.data;
+      // Nếu đang ở trang nhân viên thì render luôn
+      if(S.page==='nhanvien') renderNV();
+    }
+  }catch(e){}
 }
 function renderNV(){
   const tbody=document.getElementById('nv-tbl');
@@ -1191,7 +1222,11 @@ async function submitTB(){
   if(!td||!nd){toast('Vui lòng nhập đầy đủ');return;}
   try{
     const res=await api({action:'taoThongBao',tieuDe:td,noiDung:nd,nguoiNhan:document.getElementById('tb-nr').value});
-    if(res.success){closeM('modal-tb');toast('Đã gửi thông báo');loadTB();}else toast(res.error||'Lỗi gửi');
+    if(res.success){
+      closeM('modal-tb');
+      toast('Đã gửi thông báo ✓');
+      await loadTB();
+    }else toast(res.error||'Lỗi gửi');
   }catch(e){toast('Lỗi kết nối');}
 }
 
@@ -1324,7 +1359,7 @@ async function saveCa(){
   const names=['Sáng','Trưa','Chiều','Tối'];
   const caLamViec=names.map((ten,i)=>({ten,batDau:document.getElementById('ca-bd-'+i).value,ketThuc:document.getElementById('ca-kt-'+i).value}));
   try{const res=await api({action:'luuCaiDat',key:'caLamViec',value:caLamViec});
-    if(res.success){S.caiDat.caLamViec=caLamViec;toast('Đã lưu giờ ca');}else toast(res.error||'Lỗi lưu');}
+    if(res.success){S.caiDat.caLamViec=caLamViec;toast('Đã lưu giờ ca ✓');}else toast(res.error||'Lỗi lưu');}
   catch(e){toast('Lỗi kết nối');}
 }
 async function saveKW(){
@@ -1334,7 +1369,7 @@ async function saveKW(){
   if(ht+tv+td!==100){toast('Tổng trọng số phải bằng 100');return;}
   try{const val={hoanThanh:ht,traViec:tv,tocDo:td};
     const res=await api({action:'luuCaiDat',key:'kpiTrongSo',value:val});
-    if(res.success){S.caiDat.kpiTrongSo=val;toast('Đã lưu trọng số KPI');}else toast(res.error||'Lỗi lưu');}
+    if(res.success){S.caiDat.kpiTrongSo=val;toast('Đã lưu trọng số KPI ✓');}else toast(res.error||'Lỗi lưu');}
   catch(e){toast('Lỗi kết nối');}
 }
 
