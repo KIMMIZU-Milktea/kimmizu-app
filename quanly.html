@@ -617,14 +617,9 @@ textarea.inp{resize:vertical;min-height:80px}
 
       <!-- NHẬT KÝ -->
       <div class="page" id="page-nhatky">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
-          <div style="font-size:13px;color:var(--brown-mid)">200 sự kiện gần nhất</div>
-          <button class="btn btn-primary btn-sm" onclick="loadNhatKy()">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" width="14" height="14"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>Làm mới
-          </button>
-        </div>
+        <div style="margin-bottom:16px;font-size:13px;color:var(--brown-mid)">200 sự kiện gần nhất</div>
         <div class="card"><div class="card-bd" id="nk-list">
-          <div style="text-align:center;padding:48px;color:var(--brown-pale)">Nhấn "Làm mới" để tải nhật ký</div>
+          <div style="text-align:center;padding:48px;color:var(--brown-pale)">Đang tải nhật ký...</div>
         </div></div>
       </div>
 
@@ -881,6 +876,7 @@ function goPage(p){
     case'nhanvien':renderNV();break;
     case'thongbao':loadTB();break;
     case'kpi':loadKPI();break;
+    case'nhatky':loadNhatKy();break;
     case'caidat':renderCaiDat();break;
   }
 }
