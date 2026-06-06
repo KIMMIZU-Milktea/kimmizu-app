@@ -675,14 +675,16 @@ textarea.form-input{resize:vertical;min-height:80px}
 @keyframes spin{to{transform:rotate(360deg)}}
 
 /* ===== PULL TO REFRESH ===== */
-.ptr-wrap{position:relative;overflow:hidden}
+.ptr-wrap{position:relative;}
 .ptr-indicator{
-  position:absolute;top:-48px;left:0;right:0;
-  height:48px;display:flex;align-items:center;justify-content:center;
+  display:none; /* ẩn mặc định, JS show khi pull */
+  align-items:center;justify-content:center;
+  height:40px;
   color:var(--brown-mid);font-size:13px;gap:8px;
-  transition:top .2s;pointer-events:none;
+  pointer-events:none;
+  flex-shrink:0;
 }
-.ptr-indicator.visible{top:0}
+.ptr-indicator.visible{display:flex;}
 .ptr-spinner{width:18px;height:18px;border:2px solid var(--cream-dark);border-top-color:var(--brown);border-radius:50%;animation:spin .7s linear infinite}
 
 /* ===== SCROLL CUSTOM ===== */
