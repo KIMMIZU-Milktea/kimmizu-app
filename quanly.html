@@ -558,10 +558,15 @@ textarea.inp{resize:vertical;min-height:80px}
 
       <!-- NHÂN VIÊN -->
       <div class="page" id="page-nhanvien">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:10px">
+          <span style="font-size:13px;color:var(--brown-mid)" id="nv-count"></span>
+          <button class="btn btn-primary" onclick="openModalNV()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Thêm nhân viên
+          </button>
+        </div>
         <div class="card">
-          <div class="card-hd"><span class="card-title">Danh sách nhân viên</span><span style="font-size:12px;color:var(--brown-mid)" id="nv-count"></span></div>
           <div class="card-bd-0"><div class="tbl-wrap">
-            <table><thead><tr><th>ID</th><th>Tên</th><th>Vai trò</th><th>Trạng thái</th></tr></thead>
+            <table><thead><tr><th>ID</th><th>Tên đăng nhập</th><th>Mật khẩu</th><th>Vai trò</th><th>Trạng thái</th><th>Email</th><th style="width:60px"></th></tr></thead>
             <tbody id="nv-tbl"></tbody></table>
           </div></div>
         </div>
@@ -745,6 +750,47 @@ textarea.inp{resize:vertical;min-height:80px}
     <div class="modal-ft">
       <button class="btn btn-ghost" onclick="closeM('modal-cv')">Huỷ</button>
       <button class="btn btn-primary" onclick="submitCV()" style="min-height:44px;min-width:120px">Lưu việc</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- MODAL: THÊM / SỬA NHÂN VIÊN -->
+<div class="modal-ov" id="modal-nv">
+  <div class="modal">
+    <div class="modal-hd">
+      <span class="modal-title" id="modal-nv-title">Thêm nhân viên</span>
+      <button class="modal-close" onclick="closeM('modal-nv')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div class="modal-bd">
+      <input type="hidden" id="nv-edit-id">
+      <div class="form-grp2"><label>Tên đăng nhập *</label>
+        <input type="text" class="inp" id="nv-ten" placeholder="Tên nhân viên dùng để đăng nhập...">
+      </div>
+      <div class="form-grp2"><label>Mật khẩu * <span style="font-size:11px;color:var(--brown-pale)">(đúng 6 ký tự)</span></label>
+        <input type="text" class="inp" id="nv-mk" placeholder="6 ký tự" maxlength="6">
+      </div>
+      <div class="form-grp2"><label>Email <span style="font-size:11px;color:var(--brown-pale)">(dùng để nhắc nhở thông báo)</span></label>
+        <input type="email" class="inp" id="nv-email" placeholder="email@gmail.com">
+      </div>
+      <div class="form-row">
+        <div class="form-grp2"><label>Vai trò</label>
+          <select class="inp" id="nv-vaitro">
+            <option value="Nhân viên">Nhân viên</option>
+            <option value="Quản lý">Quản lý</option>
+          </select>
+        </div>
+        <div class="form-grp2"><label>Trạng thái</label>
+          <select class="inp" id="nv-tt">
+            <option value="Hoạt động">Hoạt động</option>
+            <option value="Nghỉ việc">Nghỉ việc</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <div class="modal-ft">
+      <button class="btn btn-ghost" onclick="closeM('modal-nv')">Huỷ</button>
+      <button class="btn btn-primary" onclick="submitNV()" style="min-height:44px;min-width:120px">Lưu</button>
     </div>
   </div>
 </div>
@@ -1105,18 +1151,82 @@ async function loadNV(){
 }
 function renderNV(){
   const tbody=document.getElementById('nv-tbl');
-  document.getElementById('nv-count').textContent=S.nvList.length+' người';
-  if(!S.nvList.length){tbody.innerHTML='<tr><td colspan="4" style="text-align:center;padding:24px;color:#999">Chưa có dữ liệu</td></tr>';return;}
+  const nvHD=S.nvList.filter(nv=>nv.trangThai==='Hoạt động').length;
+  document.getElementById('nv-count').textContent=S.nvList.length+' người ('+nvHD+' hoạt động)';
+  if(!S.nvList.length){tbody.innerHTML='<tr><td colspan="7" style="text-align:center;padding:24px;color:#999">Chưa có dữ liệu</td></tr>';return;}
   tbody.innerHTML=S.nvList.map(nv=>`<tr>
     <td style="font-size:12px;color:var(--brown-pale)">${nv.id}</td>
     <td style="font-weight:500">${nv.tenNV}</td>
+    <td style="font-size:12px;color:var(--brown-mid)">${nv.matKhau||'••••••'}</td>
     <td><span class="badge ${nv.vaiTro==='Quản lý'?'b-brown':'b-blue'}">${nv.vaiTro}</span></td>
     <td><span class="badge ${nv.trangThai==='Hoạt động'?'b-green':'b-red'}">${nv.trangThai}</span></td>
+    <td style="font-size:12px;color:var(--brown-mid)">${nv.email||'—'}</td>
+    <td>
+      <button class="btn-icon" title="Sửa" onclick='openModalSuaNV(${JSON.stringify(nv).replace(/'/g,"&#39;")})'>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+      </button>
+    </td>
   </tr>`).join('');
   // Cập nhật select gửi thông báo
   const sel=document.getElementById('tb-nr');
   sel.innerHTML='<option value="Tất cả">Tất cả nhân viên</option>'+
-    S.nvList.filter(nv=>nv.vaiTro==='Nhân viên').map(nv=>`<option value="${nv.tenNV}">${nv.tenNV}</option>`).join('');
+    S.nvList.filter(nv=>nv.vaiTro==='Nhân viên'&&nv.trangThai==='Hoạt động')
+      .map(nv=>`<option value="${nv.tenNV}">${nv.tenNV}</option>`).join('');
+}
+
+
+// ============================================================
+// NHÂN VIÊN — THÊM / SỬA
+// ============================================================
+function openModalNV() {
+  document.getElementById('nv-edit-id').value = '';
+  document.getElementById('modal-nv-title').textContent = 'Thêm nhân viên';
+  document.getElementById('nv-ten').value    = '';
+  document.getElementById('nv-mk').value     = '';
+  document.getElementById('nv-email').value  = '';
+  document.getElementById('nv-vaitro').value = 'Nhân viên';
+  document.getElementById('nv-tt').value     = 'Hoạt động';
+  document.getElementById('modal-nv').classList.add('open');
+  setTimeout(()=>document.getElementById('nv-ten').focus(), 100);
+}
+
+function openModalSuaNV(nv) {
+  document.getElementById('nv-edit-id').value = nv.id;
+  document.getElementById('modal-nv-title').textContent = 'Sửa nhân viên';
+  document.getElementById('nv-ten').value    = nv.tenNV;
+  document.getElementById('nv-mk').value     = nv.matKhau || '';
+  document.getElementById('nv-email').value  = nv.email   || '';
+  document.getElementById('nv-vaitro').value = nv.vaiTro  || 'Nhân viên';
+  document.getElementById('nv-tt').value     = nv.trangThai || 'Hoạt động';
+  document.getElementById('modal-nv').classList.add('open');
+}
+
+async function submitNV() {
+  const id    = document.getElementById('nv-edit-id').value;
+  const ten   = document.getElementById('nv-ten').value.trim();
+  const mk    = document.getElementById('nv-mk').value.trim();
+  const email = document.getElementById('nv-email').value.trim();
+  const vaiTro= document.getElementById('nv-vaitro').value;
+  const tt    = document.getElementById('nv-tt').value;
+
+  if (!ten) { toast('Vui lòng nhập tên đăng nhập'); return; }
+  if (!id && (!mk || mk.length !== 6)) { toast('Mật khẩu phải đúng 6 ký tự'); return; }
+
+  // Ghi thẳng vào Sheet NhanVien qua API luuNhanVien
+  const payload = {
+    action: 'luuNhanVien',
+    id, tenNV: ten, matKhau: mk, vaiTro, email, trangThai: tt,
+  };
+  try {
+    const res = await api(payload);
+    if (res.success) {
+      closeM('modal-nv');
+      toast((id ? 'Đã cập nhật' : 'Đã thêm') + ' nhân viên ✓');
+      await loadNV();
+    } else {
+      toast(res.error || 'Lỗi lưu nhân viên');
+    }
+  } catch(e) { toast('Lỗi kết nối'); }
 }
 
 // ============================================================
