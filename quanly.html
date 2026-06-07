@@ -809,19 +809,21 @@ textarea.inp{resize:vertical;min-height:80px}
 <div class="modal-ov" id="modal-tb">
   <div class="modal">
     <div class="modal-hd">
-      <span class="modal-title">Tạo thông báo</span>
+      <span class="modal-title" id="tb-modal-title">Tạo thông báo</span>
       <button class="modal-close" onclick="closeM('modal-tb')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
     </div>
     <div class="modal-bd">
+      <input type="hidden" id="tb-edit-id">
       <div class="form-grp2"><label>Tiêu đề *</label><input type="text" class="inp" id="tb-td" placeholder="Tiêu đề thông báo..."></div>
-      <div class="form-grp2"><label>Nội dung *</label><textarea class="inp" id="tb-nd" placeholder="Nội dung..."></textarea></div>
+      <div class="form-grp2"><label>Nội dung *</label><textarea class="inp" id="tb-nd" rows="4" placeholder="Nội dung..."></textarea></div>
       <div class="form-grp2"><label>Gửi cho</label>
         <select class="inp" id="tb-nr"><option value="Tất cả">Tất cả nhân viên</option></select>
       </div>
     </div>
     <div class="modal-ft">
       <button class="btn btn-ghost" onclick="closeM('modal-tb')">Huỷ</button>
-      <button class="btn btn-primary" onclick="submitTB()" style="min-height:44px;min-width:120px">Gửi</button>
+      <button class="btn btn-danger" id="tb-btn-xoa" style="display:none;min-height:44px" onclick="xoaThongBao()">Xoá</button>
+      <button class="btn btn-primary" id="tb-btn-submit" onclick="submitTB()" style="min-height:44px;min-width:120px">Gửi</button>
     </div>
   </div>
 </div>
@@ -1325,6 +1327,9 @@ async function loadTB(){
             <div class="notif-title">${t.tieuDe}</div>
             <div class="notif-body">${t.noiDung}</div>
           </div>
+          <button class="btn-icon" title="Sửa" onclick='openModalSuaTB(${JSON.stringify(t).replace(/\/g,"\\").replace(/'/g,"&#39;")})' style="flex-shrink:0">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" width="15" height="15"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          </button>
           ${t.soChuaDoc>0
             ? `<button class="btn-nhac" id="nhac-${t.id}" onclick="nhacNho('${t.id}',this)" title="Gửi email nhắc người chưa đọc">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 1.27h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.81a16 16 0 0 0 6.29 6.29l1.88-1.88a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
@@ -1422,14 +1427,18 @@ function openModalTB(){
 async function submitTB(){
   const td=document.getElementById('tb-td').value.trim();
   const nd=document.getElementById('tb-nd').value.trim();
-  if(!td||!nd){toast('Vui lòng nhập đầy đủ');return;}
+  const id=document.getElementById('tb-edit-id').value;
+  if(!td||!nd){toast('Vui lòng nhập đầy đủ tiêu đề và nội dung');return;}
+  const nguoiNhan=document.getElementById('tb-nr').value;
   try{
-    const res=await api({action:'taoThongBao',tieuDe:td,noiDung:nd,nguoiNhan:document.getElementById('tb-nr').value});
+    const res=await api(id
+      ?{action:'suaThongBao',id,tieuDe:td,noiDung:nd,nguoiNhan}
+      :{action:'taoThongBao',tieuDe:td,noiDung:nd,nguoiNhan});
     if(res.success){
       closeM('modal-tb');
-      toast('Đã gửi thông báo ✓');
+      toast(id?'Đã cập nhật thông báo ✓':'Đã gửi thông báo ✓');
       await loadTB();
-    }else toast(res.error||'Lỗi gửi');
+    }else toast(res.error||'Lỗi');
   }catch(e){toast('Lỗi kết nối');}
 }
 
