@@ -1331,6 +1331,7 @@ async function loadTB(){
     if(!res.success){toast(res.error||'Lỗi tải thông báo');return;}
     const el=document.getElementById('tb-list');
     const list=res.data||[];
+    window._tbList = list; // lưu để tra cứu khi bấm nút Sửa
 
     // Summary
     const tongTB=list.length;
@@ -1352,7 +1353,7 @@ async function loadTB(){
             <div class="notif-title">${t.tieuDe}</div>
             <div class="notif-body">${t.noiDung}</div>
           </div>
-          <button class="btn-icon" title="Sửa" onclick='openModalSuaTB(${JSON.stringify(t).replace(/\/g,"\\").replace(/'/g,"&#39;")})' style="flex-shrink:0">
+          <button class="btn-icon" title="Sửa" onclick="openModalSuaTBById('${t.id}')" style="flex-shrink:0">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" width="15" height="15"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
           </button>
           ${t.soChuaDoc>0
@@ -1443,10 +1444,40 @@ async function checkNotif(){
 }
 
 function openModalTB(){
-  renderNV();
+  document.getElementById('tb-edit-id').value='';
+  document.getElementById('tb-modal-title').textContent='Tạo thông báo';
   document.getElementById('tb-td').value='';
   document.getElementById('tb-nd').value='';
+  document.getElementById('tb-btn-xoa').style.display='none';
+  document.getElementById('tb-btn-submit').textContent='Gửi';
   document.getElementById('modal-tb').classList.add('open');
+  setTimeout(()=>document.getElementById('tb-td').focus(),100);
+}
+
+// Mở modal sửa — tra cứu từ _tbList theo id (tránh lỗi regex khi truyền object qua onclick)
+function openModalSuaTBById(id){
+  const t=(window._tbList||[]).find(x=>x.id===id);
+  if(!t){toast('Không tìm thấy thông báo');return;}
+  document.getElementById('tb-edit-id').value=t.id;
+  document.getElementById('tb-modal-title').textContent='Sửa thông báo';
+  document.getElementById('tb-td').value=t.tieuDe||'';
+  document.getElementById('tb-nd').value=t.noiDung||'';
+  document.getElementById('tb-btn-xoa').style.display='inline-flex';
+  document.getElementById('tb-btn-submit').textContent='Lưu';
+  const sel=document.getElementById('tb-nr');
+  for(let i=0;i<sel.options.length;i++){if(sel.options[i].value===t.nguoiNhan){sel.selectedIndex=i;break;}}
+  document.getElementById('modal-tb').classList.add('open');
+}
+
+async function xoaThongBao(){
+  const id=document.getElementById('tb-edit-id').value;
+  if(!id)return;
+  if(!confirm('Xoá thông báo này? Không thể hoàn tác.'))return;
+  try{
+    const res=await api({action:'xoaThongBao',id});
+    if(res.success){closeM('modal-tb');toast('Đã xoá thông báo');await loadTB();}
+    else toast(res.error||'Lỗi xoá');
+  }catch(e){toast('Lỗi kết nối');}
 }
 
 async function submitTB(){
