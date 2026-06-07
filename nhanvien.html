@@ -1057,12 +1057,23 @@ async function initMain() {
   await Promise.all([loadCongViec(), loadThongBao()]);
 
   // 5. Auto-refresh mỗi 2 phút
-  setInterval(async () => {
-    if (state.isOnline) {
-      await Promise.all([loadCongViec(), loadThongBao()]);
+  // Smart refresh: dừng khi tab ẩn
+  let _nvRefTimer=null, _nvLastActive=Date.now();
+  function scheduleNVRefresh(){
+    if(_nvRefTimer)clearInterval(_nvRefTimer);
+    _nvRefTimer=setInterval(async()=>{
+      if(document.visibilityState!=='visible'||!state.isOnline)return;
+      await Promise.all([loadCongViec(),loadThongBao()]);
       updateCaBar();
-    }
-  }, 120000);
+    },120000);
+  }
+  document.addEventListener('visibilitychange',()=>{
+    if(document.visibilityState==='visible'){
+      if(Date.now()-_nvLastActive>60000){invalidateNVCache();doRefresh(null);}
+      scheduleNVRefresh();
+    }else{_nvLastActive=Date.now();if(_nvRefTimer)clearInterval(_nvRefTimer);}
+  });
+  scheduleNVRefresh();
 
   // 6. Sync offline
   if (state.isOnline && state.offlineQueue.length > 0) await syncOffline();
@@ -1527,17 +1538,34 @@ function toast(msg) {
 // ============================================================
 // API HELPERS — dùng GET cho tất cả (tránh CORS với Apps Script)
 // ============================================================
+// Cache + dedup cho app nhân viên
+const _nv_cache = {}, _nv_pending = {};
+const NV_CACHE_TTL = { getCongViec:15000, getThongBao:20000 };
+function invalidateNVCache() { Object.keys(_nv_cache).forEach(k=>delete _nv_cache[k]); }
+
 async function apiGet(params) {
   if (!state.isOnline) throw new Error('offline');
   params.token = params.token || (state.user && state.user.token) || '';
   const qs = new URLSearchParams(params).toString();
-  const res = await fetch(API_URL + '?' + qs, {
-    method: 'GET',
-    redirect: 'follow',
-    mode: 'cors',
-  });
-  const text = await res.text();
-  try { return JSON.parse(text); } catch(e) { throw new Error('Parse error: ' + text.substring(0,200)); }
+  const action = params.action || '';
+  const ttl = NV_CACHE_TTL[action];
+
+  // Đọc cache nếu còn hạn
+  if(ttl && _nv_cache[qs] && (Date.now()-_nv_cache[qs].t < ttl))
+    return _nv_cache[qs].d;
+
+  // Dedup: không gọi trùng cùng lúc
+  if(_nv_pending[qs]) return _nv_pending[qs];
+
+  const req = fetch(API_URL+'?'+qs,{method:'GET',redirect:'follow',mode:'cors'})
+    .then(r=>r.text())
+    .then(text=>{
+      let data; try{data=JSON.parse(text);}catch(e){throw new Error('Parse: '+text.substring(0,100));}
+      if(ttl&&data.success!==false) _nv_cache[qs]={d:data,t:Date.now()};
+      delete _nv_pending[qs]; return data;
+    }).catch(err=>{delete _nv_pending[qs];throw err;});
+
+  _nv_pending[qs]=req; return req;
 }
 
 async function apiPost(body) {

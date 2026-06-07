@@ -549,12 +549,12 @@ textarea.inp{resize:vertical;min-height:80px}
           <div><label style="font-size:11px;color:var(--brown-mid);display:block;margin-bottom:3px">Ngày</label>
           <div class="dp-wrap"><input type="text" class="inp dp-input" id="cv-ng" placeholder="dd/mm/yyyy" readonly style="max-width:160px" onclick="dpOpen(this,()=>loadCV())"></div></div>
           <div><label style="font-size:11px;color:var(--brown-mid);display:block;margin-bottom:3px">Trạng thái</label>
-          <select class="inp" id="cv-tt" style="max-width:160px" onchange="loadCV()">
+          <select class="inp" id="cv-tt" style="max-width:160px" onchange="debouncedLoadCV()">
             <option value="">Tất cả</option>
             <option>Chưa làm</option><option>Đang làm</option><option>Hoàn thành</option><option>Trả việc</option>
           </select></div>
           <div><label style="font-size:11px;color:var(--brown-mid);display:block;margin-bottom:3px">Ca</label>
-          <select class="inp" id="cv-ca-f" style="max-width:130px" onchange="loadCV()">
+          <select class="inp" id="cv-ca-f" style="max-width:130px" onchange="debouncedLoadCV()">
             <option value="">Tất cả ca</option>
             <option>Sáng</option><option>Trưa</option><option>Chiều</option><option>Tối</option>
           </select></div>
@@ -932,19 +932,31 @@ async function initApp() {
   await Promise.all([loadCaiDat(), loadNV()]);
   await loadDashboard();
 
-  // 6. Auto-refresh mỗi 60 giây
-  setInterval(()=>{
-    if(document.visibilityState==='visible'){
+  // 6. Auto-refresh thông minh (Page Visibility)
+  let _lastActive = Date.now(), _refreshTimer = null;
+  function scheduleRefresh() {
+    if(_refreshTimer) clearInterval(_refreshTimer);
+    _refreshTimer = setInterval(()=>{
+      if(document.visibilityState!=='visible') return;
       switch(S.page){
         case'dashboard': loadDashboard(); break;
-        case'congviec':  loadCV();        break;
-        case'thongbao':  loadTB();        break;
+        case'congviec':  loadCV();  break;
+        case'thongbao':  loadTB();  break;
       }
+      checkNotif();
+    }, 60000);
+  }
+  document.addEventListener('visibilitychange',()=>{
+    if(document.visibilityState==='visible'){
+      // Tab active lại sau > 30s → refresh ngay
+      if(Date.now()-_lastActive > 30000) goPage(S.page);
+      scheduleRefresh();
+    } else {
+      _lastActive=Date.now();
+      if(_refreshTimer) clearInterval(_refreshTimer);
     }
-  }, 60000);
-
-  // 7. Kiểm tra thông báo mỗi 60 giây
-  setInterval(checkNotif, 60000);
+  });
+  scheduleRefresh();
 }
 
 // ============================================================
@@ -1028,7 +1040,13 @@ function goPageFilter(p,tt){
   goPage(p);
 }
 
-function refreshPage(){goPage(S.page);}
+function refreshPage(){
+  // Xoá cache trang hiện tại trước khi reload
+  const keyMap={dashboard:'getDashboard',congviec:'getCongViec',thongbao:'getThongBaoAdmin',nhatky:'getNhatKy',kpi:'getKPI',nhanvien:'getNhanVien',baocao:'getBaoCao'};
+  const k=keyMap[S.page];
+  if(k&&typeof _cache!=='undefined') Object.keys(_cache).forEach(ck=>{if(ck.includes('action='+k))delete _cache[ck];});
+  goPage(S.page);
+}
 function openSB(){document.getElementById('sidebar').classList.add('open');document.getElementById('sb-overlay').classList.add('open');}
 function closeSB(){document.getElementById('sidebar').classList.remove('open');document.getElementById('sb-overlay').classList.remove('open');}
 
@@ -1118,6 +1136,9 @@ function switchCVTab(loai,btn){
   document.querySelectorAll('#page-congviec .tab').forEach(t=>t.classList.remove('active'));
   btn.classList.add('active');loadCV();
 }
+
+let _cvTimer=null;
+function debouncedLoadCV(){if(_cvTimer)clearTimeout(_cvTimer);_cvTimer=setTimeout(()=>loadCV(),300);}
 
 async function loadCV(){
   const ngay=document.getElementById('cv-ng').value;
