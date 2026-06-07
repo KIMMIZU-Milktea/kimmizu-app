@@ -86,7 +86,8 @@ button{cursor:pointer}
 
 /* ===== LOADING ===== */
 #loading{position:fixed;inset:0;background:var(--brown);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;transition:opacity .4s}
-#loading.hide{opacity:0;pointer-events:none}
+#loading.hide{opacity:0;pointer-events:none;transition:opacity .4s}
+#loading.done{display:none}
 .loading-brand{font-size:40px;font-weight:800;color:var(--cream);letter-spacing:4px;margin-bottom:6px}
 .loading-sub{font-size:13px;color:var(--brown-pale)}
 .spinner{width:28px;height:28px;border:3px solid rgba(245,230,200,0.2);border-top-color:var(--cream);border-radius:50%;animation:spin .8s linear infinite;margin-top:28px}
@@ -851,20 +852,44 @@ const S = { user:null, page:'dashboard', kpiTab:'tuan', cvLoai:'', xoaId:null, n
 // ============================================================
 // INIT
 // ============================================================
+// Bắt lỗi JS toàn cục — tránh màn hình treo im lặng
+window.addEventListener('error', (e) => {
+  console.error('Global error:', e.message, e.filename, e.lineno);
+  const ld = document.getElementById('loading');
+  if(ld && !ld.classList.contains('hide')) {
+    ld.classList.add('hide');
+    setTimeout(()=>ld.classList.add('done'),450);
+    showLogin();
+  }
+});
+
 window.addEventListener('load', async () => {
   setDate();
-  setTimeout(() => document.getElementById('loading').classList.add('hide'), 1000);
   checkMobile();
   window.addEventListener('resize', checkMobile);
+
+  // Ẩn loading sau 600ms
+  const hideLd = () => {
+    const ld = document.getElementById('loading');
+    if(ld) { ld.classList.add('hide'); setTimeout(()=>ld.classList.add('done'),450); }
+  };
+  setTimeout(hideLd, 600);
+
   const saved = localStorage.getItem('kimmizu_ql');
   if (saved) {
     try {
       S.user = JSON.parse(saved);
-      if (S.user.vaiTro !== 'Quản lý') throw new Error();
+      if (!S.user || S.user.vaiTro !== 'Quản lý') throw new Error('not manager');
       await new Promise(r => setTimeout(r, 100));
       await initApp();
-    } catch(e) { localStorage.removeItem('kimmizu_ql'); showLogin(); }
-  } else showLogin();
+    } catch(e) {
+      console.error('Init error:', e);
+      localStorage.removeItem('kimmizu_ql');
+      showLogin();
+    }
+  } else {
+    showLogin();
+  }
 });
 
 function checkMobile() {
