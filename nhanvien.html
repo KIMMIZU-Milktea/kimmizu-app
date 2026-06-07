@@ -979,6 +979,8 @@ window.addEventListener('load', async () => {
   if (saved) {
     try {
       state.user = JSON.parse(saved);
+      // Đợi DOM sẵn sàng rồi mới init
+      await new Promise(r => requestAnimationFrame(r));
       await initMain();
     } catch(e) {
       localStorage.removeItem('kimmizu_user');
@@ -1030,24 +1032,29 @@ async function doLogin() {
 // INIT MAIN
 // ============================================================
 async function initMain() {
+  // 1. Hiện màn hình chính
   showScreen('screen-main');
+  goTab('home'); // đảm bảo tab-home active và đúng display
 
-  // Update UI với thông tin user
+  // 2. Cập nhật UI
   const u = state.user;
   document.getElementById('header-role').textContent = u.tenNV;
   document.getElementById('avatar-btn').textContent  = u.tenNV.charAt(0).toUpperCase();
-
-  // Greeting
   const h = new Date().getHours();
   const greet = h < 11 ? 'Chào buổi sáng' : h < 14 ? 'Chào buổi trưa' : h < 18 ? 'Chào buổi chiều' : 'Chào buổi tối';
   document.getElementById('greeting-name').textContent = greet + ', ' + u.tenNV + '!';
   document.getElementById('date-badge').textContent = formatDateVN(new Date());
-
-  // Load data
-  await Promise.all([loadCongViec(), loadThongBao()]);
   updateCaBar();
 
-  // Refresh mỗi 2 phút
+  // 3. Hiện skeleton loading ngay
+  document.getElementById('viec-list').innerHTML =
+    '<div style="text-align:center;padding:40px;color:var(--brown-pale)">Đang tải dữ liệu...</div>';
+
+  // 4. Đợi DOM render xong rồi mới load data
+  await new Promise(r => setTimeout(r, 50));
+  await Promise.all([loadCongViec(), loadThongBao()]);
+
+  // 5. Auto-refresh mỗi 2 phút
   setInterval(async () => {
     if (state.isOnline) {
       await Promise.all([loadCongViec(), loadThongBao()]);
@@ -1055,7 +1062,7 @@ async function initMain() {
     }
   }, 120000);
 
-  // Sync offline nếu có mạng
+  // 6. Sync offline
   if (state.isOnline && state.offlineQueue.length > 0) await syncOffline();
 }
 
