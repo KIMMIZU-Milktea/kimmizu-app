@@ -205,6 +205,33 @@ button{cursor:pointer}
 .stat-card.blue{border-top-color:var(--blue)}
 .stat-num{font-size:30px;font-weight:800;color:var(--brown);line-height:1}
 .stat-lbl{font-size:12px;color:var(--brown-mid);margin-top:4px;font-weight:500}
+/* ── Dashboard theo loại + ca ── */
+.dash-section{margin-bottom:20px}
+.dash-section-hd{
+  display:flex;align-items:center;justify-content:space-between;
+  background:var(--brown);padding:10px 16px;
+  border-radius:var(--radius-sm) var(--radius-sm) 0 0;
+}
+.dash-section-hd span{font-size:14px;font-weight:700;color:var(--cream)}
+.dash-section-hd .sec-tot{font-size:12px;color:var(--cream-dark)}
+.dash-ca-tbl{width:100%;border-collapse:collapse;background:var(--white);
+  border-radius:0 0 var(--radius-sm) var(--radius-sm);box-shadow:var(--shadow);overflow:hidden}
+.dash-ca-tbl th{background:var(--cream);color:var(--brown-mid);font-size:11px;font-weight:600;
+  text-align:center;padding:7px 4px;border-bottom:2px solid var(--cream-dark)}
+.dash-ca-tbl th:first-child{text-align:left;padding-left:12px;width:25%}
+.dash-ca-tbl td{padding:8px 4px;text-align:center;border-bottom:1px solid var(--cream);font-size:13px}
+.dash-ca-tbl td:first-child{text-align:left;padding-left:12px;font-weight:600;color:var(--brown)}
+.dash-ca-tbl tr:last-child td{border-bottom:none}
+.dash-ca-tbl tr.tong-row td{background:var(--cream);font-weight:700;border-top:2px solid var(--cream-dark)}
+.d-num{display:inline-block;min-width:28px;padding:3px 6px;border-radius:6px;
+  font-weight:700;font-size:13px;cursor:pointer;transition:transform .1s}
+.d-num:hover{transform:scale(1.2)}
+.d-num.cl{background:var(--orange-bg);color:var(--orange)}
+.d-num.dl{background:var(--blue-bg);color:var(--blue)}
+.d-num.ht{background:var(--green-bg);color:var(--green)}
+.d-num.tv{background:var(--red-bg);color:var(--red)}
+.d-num.z{background:var(--cream);color:var(--brown-pale);cursor:default;font-weight:400}
+.d-num.z:hover{transform:none}
 
 /* ===== CARD ===== */
 .card{background:var(--white);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;margin-bottom:16px}
@@ -481,7 +508,8 @@ textarea.inp{resize:vertical;min-height:80px}
 
       <!-- DASHBOARD -->
       <div class="page active" id="page-dashboard">
-        <div class="stats-row">
+        <!-- Tổng quan -->
+        <div class="stats-row" style="margin-bottom:16px">
           <div class="stat-card orange" onclick="goPageFilter('congviec','Chưa làm')">
             <div class="stat-num" id="d-chua">0</div>
             <div class="stat-lbl">Chưa làm</div>
@@ -499,26 +527,8 @@ textarea.inp{resize:vertical;min-height:80px}
             <div class="stat-lbl">Trả việc</div>
           </div>
         </div>
-        <div class="dash-grid">
-          <div class="card">
-            <div class="card-hd"><span class="card-title">Đang làm</span><span class="badge b-orange" id="d-dang-badge">0</span></div>
-            <div class="card-bd-0">
-              <div class="tbl-wrap"><table>
-                <thead><tr><th>Công việc</th><th>Nhân viên</th><th>Nhận lúc</th></tr></thead>
-                <tbody id="d-dang-tbl"></tbody>
-              </table></div>
-            </div>
-          </div>
-          <div class="card">
-            <div class="card-hd"><span class="card-title">Chưa có người nhận</span><span class="badge b-gray" id="d-chua-badge">0</span></div>
-            <div class="card-bd-0">
-              <div class="tbl-wrap"><table>
-                <thead><tr><th>Công việc</th><th>Loại</th><th>Ưu tiên</th></tr></thead>
-                <tbody id="d-chua-tbl"></tbody>
-              </table></div>
-            </div>
-          </div>
-        </div>
+        <!-- 3 phần theo loại -->
+        <div id="dash-sections"></div>
       </div>
 
       <!-- CÔNG VIỆC -->
@@ -1002,22 +1012,75 @@ async function loadDashboard(){
   try{
     const res=await api({action:'getDashboard',ngay:fmtDate(new Date())});
     if(!res.success)return;
-    const{stats,viecDangLam,viecChuaLam}=res;
+    const stats=res.stats||{};
+    // Tổng 4 ô
     document.getElementById('d-chua').textContent=stats.chuaLam||0;
     document.getElementById('d-dang').textContent=stats.dangLam||0;
     document.getElementById('d-hoan').textContent=stats.hoanThanh||0;
     document.getElementById('d-tra').textContent=stats.traViec||0;
-    document.getElementById('d-dang-badge').textContent=stats.dangLam||0;
-    document.getElementById('d-chua-badge').textContent=stats.chuaLam||0;
-    const dangEl=document.getElementById('d-dang-tbl');
-    dangEl.innerHTML=viecDangLam?.length
-      ?viecDangLam.map(v=>`<tr><td style="font-weight:500">${v.tenViec}</td><td style="color:var(--brown-light);font-weight:500">${v.nguoiNhan}</td><td style="font-size:11px;color:var(--brown-pale)">${v.thoiGianNhan||''}</td></tr>`).join('')
-      :'<tr><td colspan="3" style="text-align:center;color:#999;padding:18px">Chưa có ai đang làm</td></tr>';
-    const chuaEl=document.getElementById('d-chua-tbl');
-    chuaEl.innerHTML=viecChuaLam?.length
-      ?viecChuaLam.slice(0,8).map(v=>`<tr><td style="font-weight:500">${v.tenViec}</td><td><span class="badge ${bLoai(v.loaiViec)}">${v.loaiViec}</span></td><td><span class="badge ${bUu(v.uuTien)}">${v.uuTien}</span></td></tr>`).join('')
-      :'<tr><td colspan="3" style="text-align:center;color:var(--green);padding:18px">✓ Tất cả đã có người nhận</td></tr>';
+    // Badge thông báo
+    const nb=document.getElementById('notif-badge');
+    if(nb){nb.textContent=res.tbChuaDoc||0;nb.style.display=res.tbChuaDoc>0?'flex':'none';}
+    // Render 3 phần
+    renderDashSections(res.theoLoai||{}, fmtDate(new Date()));
   }catch(e){toast('Lỗi tải dashboard');}
+}
+
+function renderDashSections(tl, ngay){
+  const DS_LOAI=[
+    {key:'Ca',        label:'📌 Việc Ca',        hasCa:true},
+    {key:'Định kỳ',   label:'🔁 Việc Định kỳ',   hasCa:false},
+    {key:'Phát sinh', label:'⚡ Việc Phát sinh',  hasCa:false},
+  ];
+  const DS_CA=['Sáng','Trưa','Chiều','Tối'];
+
+  function num(n,tt,ca,loai){
+    const cls=tt==='Chưa làm'?'cl':tt==='Đang làm'?'dl':tt==='Hoàn thành'?'ht':'tv';
+    if(n===0) return `<span class="d-num z">0</span>`;
+    return `<span class="d-num ${cls}" onclick="dashClick('${loai}','${ca}','${tt}','${ngay}')">${n}</span>`;
+  }
+
+  const html=DS_LOAI.map(({key,label,hasCa})=>{
+    const dat=tl[key]||{};
+    const tot=dat['_all']||{chuaLam:0,dangLam:0,hoanThanh:0,traViec:0};
+    const tongSo=tot.chuaLam+tot.dangLam+tot.hoanThanh+tot.traViec;
+    let rows='';
+    if(hasCa){
+      DS_CA.forEach(ca=>{
+        const d=dat[ca]||{chuaLam:0,dangLam:0,hoanThanh:0,traViec:0};
+        if((d.chuaLam+d.dangLam+d.hoanThanh+d.traViec)===0) return;
+        rows+=`<tr><td>${ca}</td><td>${num(d.chuaLam,'Chưa làm',ca,key)}</td><td>${num(d.dangLam,'Đang làm',ca,key)}</td><td>${num(d.hoanThanh,'Hoàn thành',ca,key)}</td><td>${num(d.traViec,'Trả việc',ca,key)}</td></tr>`;
+      });
+      if(tongSo>0) rows+=`<tr class="tong-row"><td>Tổng</td><td>${num(tot.chuaLam,'Chưa làm','',key)}</td><td>${num(tot.dangLam,'Đang làm','',key)}</td><td>${num(tot.hoanThanh,'Hoàn thành','',key)}</td><td>${num(tot.traViec,'Trả việc','',key)}</td></tr>`;
+    } else {
+      rows=`<tr><td>Hôm nay</td><td>${num(tot.chuaLam,'Chưa làm','',key)}</td><td>${num(tot.dangLam,'Đang làm','',key)}</td><td>${num(tot.hoanThanh,'Hoàn thành','',key)}</td><td>${num(tot.traViec,'Trả việc','',key)}</td></tr>`;
+    }
+    if(!rows) rows=`<tr><td colspan="5" style="text-align:center;padding:14px;color:var(--brown-pale);font-size:13px">Không có việc hôm nay</td></tr>`;
+    return `<div class="dash-section">
+      <div class="dash-section-hd"><span>${label}</span><span class="sec-tot">${tongSo} việc</span></div>
+      <table class="dash-ca-tbl"><thead><tr>
+        <th>${hasCa?'Ca':'Loại'}</th>
+        <th style="color:var(--orange)">Chưa làm</th>
+        <th style="color:var(--blue)">Đang làm</th>
+        <th style="color:var(--green)">Hoàn thành</th>
+        <th style="color:var(--red)">Trả việc</th>
+      </tr></thead><tbody>${rows}</tbody></table>
+    </div>`;
+  }).join('');
+  document.getElementById('dash-sections').innerHTML=html;
+}
+
+function dashClick(loai,ca,trangThai,ngay){
+  document.getElementById('cv-ng').value=ngay;
+  document.getElementById('cv-tt').value=trangThai;
+  goPage('congviec');
+  setTimeout(()=>{
+    const lf=document.getElementById('cv-loai-f');
+    const cf=document.getElementById('cv-ca-f');
+    if(lf) lf.value=loai;
+    if(cf) cf.value=ca||'';
+    loadCV();
+  },150);
 }
 
 // ============================================================
