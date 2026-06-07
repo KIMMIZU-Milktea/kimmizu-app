@@ -792,6 +792,7 @@ window.addEventListener('load', async () => {
     try {
       S.user = JSON.parse(saved);
       if (S.user.vaiTro !== 'Quản lý') throw new Error();
+      await new Promise(r => requestAnimationFrame(r));
       await initApp();
     } catch(e) { localStorage.removeItem('kimmizu_ql'); showLogin(); }
   } else showLogin();
@@ -811,29 +812,44 @@ function setDate() {
 function showLogin() { document.getElementById('screen-login').classList.add('active'); }
 
 async function initApp() {
+  // 1. Hiện app, ẩn login
   document.getElementById('screen-login').classList.remove('active');
   document.getElementById('screen-app').classList.add('active');
   document.getElementById('sb-name').textContent = S.user.tenNV;
   document.getElementById('sb-av').textContent   = S.user.tenNV.charAt(0).toUpperCase();
-  const today = toInput(new Date());
-  document.getElementById('cv-ng').value  = fmtDate(new Date());
+
+  // 2. Set giá trị mặc định các input ngày
+  const today = fmtDate(new Date());
+  document.getElementById('cv-ng').value   = today;
   document.getElementById('cv-ngay').value = today;
-  document.getElementById('bc-tu').value  = today;
-  document.getElementById('bc-den').value = today;
+  document.getElementById('bc-tu').value   = today;
+  document.getElementById('bc-den').value  = today;
+
+  // 3. Hiện skeleton loading trên dashboard
+  const dDang = document.getElementById('d-dang-tbl');
+  const dChua = document.getElementById('d-chua-tbl');
+  if(dDang) dDang.innerHTML = '<tr><td colspan="3" style="text-align:center;padding:20px;color:var(--brown-pale)">Đang tải...</td></tr>';
+  if(dChua) dChua.innerHTML = '<tr><td colspan="3" style="text-align:center;padding:20px;color:var(--brown-pale)">Đang tải...</td></tr>';
+
+  // 4. Đợi DOM render xong (quan trọng trên mobile)
+  await new Promise(r => setTimeout(r, 80));
+
+  // 5. Load dữ liệu song song
   await Promise.all([loadCaiDat(), loadNV()]);
-  loadDashboard();
-  // Auto-refresh: cập nhật dữ liệu trang hiện tại mỗi 60 giây
+  await loadDashboard();
+
+  // 6. Auto-refresh mỗi 60 giây
   setInterval(()=>{
     if(document.visibilityState==='visible'){
       switch(S.page){
         case'dashboard': loadDashboard(); break;
-        case'congviec':  loadCV();  break;
-        case'thongbao':  loadTB();  break;
-        case'kpi':       /* KPI ít thay đổi, bỏ qua */ break;
+        case'congviec':  loadCV();        break;
+        case'thongbao':  loadTB();        break;
       }
     }
   }, 60000);
-  // Refresh thông báo định kỳ
+
+  // 7. Kiểm tra thông báo mỗi 60 giây
   setInterval(checkNotif, 60000);
 }
 
@@ -851,7 +867,7 @@ async function doLogin() {
   try{
     const res=await api({action:'login',tenNV,matKhau:mk});
     if(res.success&&res.user.vaiTro==='Quản lý'){
-      S.user=res.user;localStorage.setItem('kimmizu_ql',JSON.stringify(res.user));initApp();
+      S.user=res.user;localStorage.setItem('kimmizu_ql',JSON.stringify(res.user));await initApp();
     }else{
       err.textContent=res.user?.vaiTro&&res.user.vaiTro!=='Quản lý'?'Tài khoản không có quyền quản lý':(res.error||'Sai thông tin');
       err.classList.add('show');
