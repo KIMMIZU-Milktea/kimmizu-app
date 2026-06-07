@@ -1097,11 +1097,14 @@ async function submitCV(){
   const id=document.getElementById('cv-edit-id').value;
   const ten=document.getElementById('cv-ten').value.trim();
   if(!ten){toast('Vui lòng nhập tên việc');return;}
+  const loaiViec = document.getElementById('cv-loai').value;
+  const caValue  = loaiViec === 'Ca' ? document.getElementById('cv-ca').value : '';
   const payload={
     action:id?'suaCongViec':'taoCongViec',
-    tenViec:ten,moTa:document.getElementById('cv-mota').value.trim(),
-    loaiViec:document.getElementById('cv-loai').value,
-    ca:document.getElementById('cv-ca').value,
+    tenViec:ten,
+    moTa:document.getElementById('cv-mota').value.trim(),
+    loaiViec,
+    ca: caValue,
     ngayThucHien:document.getElementById('cv-ngay').value,
     uuTien:document.getElementById('cv-uu').value,
     hanChot:document.getElementById('cv-han').value,
