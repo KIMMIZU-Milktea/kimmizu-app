@@ -110,8 +110,19 @@ button{cursor:pointer}
 .form-grp{margin-bottom:14px}
 
 /* ===== APP SHELL ===== */
-#screen-app{display:none}
-#screen-app.active{display:flex;min-height:100vh}
+#screen-app{
+  display:flex;
+  min-height:100vh;
+  visibility:hidden;
+  opacity:0;
+  pointer-events:none;
+}
+#screen-app.active{
+  visibility:visible;
+  opacity:1;
+  pointer-events:auto;
+  transition:opacity .2s ease;
+}
 
 /* ===== SIDEBAR (desktop) ===== */
 .sidebar{width:var(--sidebar-w);background:var(--brown);min-height:100vh;display:flex;flex-direction:column;position:fixed;left:0;top:0;bottom:0;z-index:200;transition:transform .25s}
@@ -792,7 +803,7 @@ window.addEventListener('load', async () => {
     try {
       S.user = JSON.parse(saved);
       if (S.user.vaiTro !== 'Quản lý') throw new Error();
-      await new Promise(r => requestAnimationFrame(r));
+      await new Promise(r => setTimeout(r, 100));
       await initApp();
     } catch(e) { localStorage.removeItem('kimmizu_ql'); showLogin(); }
   } else showLogin();
@@ -832,7 +843,7 @@ async function initApp() {
   if(dChua) dChua.innerHTML = '<tr><td colspan="3" style="text-align:center;padding:20px;color:var(--brown-pale)">Đang tải...</td></tr>';
 
   // 4. Đợi DOM render xong (quan trọng trên mobile)
-  await new Promise(r => setTimeout(r, 80));
+  await new Promise(r => setTimeout(r, 200));
 
   // 5. Load dữ liệu song song
   await Promise.all([loadCaiDat(), loadNV()]);
