@@ -1043,7 +1043,7 @@ async function loadCV(){
     const tbody=document.getElementById('cv-tbl');
     if(!list.length){tbody.innerHTML='<tr><td colspan="8" style="text-align:center;color:#999;padding:24px">Không có công việc nào</td></tr>';return;}
     tbody.innerHTML=list.map(v=>`<tr>
-      <td style="font-weight:500;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${v.tenViec}">${v.tenViec}</td>
+      <td style="font-weight:500;min-width:150px;white-space:normal;word-break:break-word;line-height:1.4">${v.tenViec}</td>
       <td><span class="badge ${bLoai(v.loaiViec)}">${v.loaiViec}</span></td>
       <td style="font-size:12px">${v.ca||'—'}</td>
       <td><span class="badge ${bTT(v.trangThai)}">${v.trangThai}</span></td>
