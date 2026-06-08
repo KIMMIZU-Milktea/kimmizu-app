@@ -1222,7 +1222,7 @@ function renderViecCard(v) {
 
   const hanChot = v.hanChot ? `<span style="font-size:11px;color:#C62828">⏱ ${v.hanChot}</span>` : '';
 
-  return `<div class="viec-card ${borderClass}">
+  return `<div class="viec-card ${borderClass}" data-id="${v.id}">
     <div class="viec-top">
       <div class="viec-info">
         <div class="viec-ten">${v.tenViec}</div>
@@ -1519,22 +1519,14 @@ function updateViecLocal(id, trangThai, nguoiNhan) {
   if (trangThai === 'Hoàn thành') v.thoiGianHT   = '';
   if (trangThai === 'Chưa làm')   { v.nguoiNhan = ''; v.thoiGianNhan = ''; }
 
-  // 2. Tìm và thay card hiện tại trong DOM (không re-render toàn bộ)
-  const el = document.getElementById('viec-list');
-  if (el) {
-    const cards = el.querySelectorAll('.viec-card');
-    let found = false;
-    cards.forEach(card => {
-      if (card.innerHTML.indexOf("'" + id + "'") !== -1 ||
-          card.innerHTML.indexOf('"' + id + '"') !== -1) {
-        const tmp = document.createElement('div');
-        tmp.innerHTML = renderViecCard(v);
-        card.replaceWith(tmp.firstElementChild);
-        found = true;
-      }
-    });
-    // Nếu card không tìm thấy (bị lọc ẩn) → re-render toàn bộ
-    if (!found) renderViecList(state.viecList);
+  // 2. Tìm card bằng data-id và thay thế trực tiếp
+  const card = document.querySelector('#viec-list [data-id="' + id + '"]');
+  if (card) {
+    const tmp = document.createElement('div');
+    tmp.innerHTML = renderViecCard(v);
+    card.replaceWith(tmp.firstElementChild);
+  } else {
+    renderViecList(state.viecList);
   }
 
   // 3. Cập nhật số liệu thống kê ngay
