@@ -1510,17 +1510,46 @@ async function syncOffline() {
 }
 
 function updateViecLocal(id, trangThai, nguoiNhan) {
+  // 1. Cập nhật state
   const v = state.viecList.find(x => x.id === id);
-  if (v) { v.trangThai = trangThai; v.nguoiNhan = nguoiNhan; }
-  // Tính lại stats
-  const stats = {
-    chuaLam:   state.viecList.filter(x => x.trangThai === 'Chưa làm').length,
-    dangLam:   state.viecList.filter(x => x.trangThai === 'Đang làm').length,
-    hoanThanh: state.viecList.filter(x => x.trangThai === 'Hoàn thành').length,
-    traViec:   state.viecList.filter(x => x.trangThai === 'Trả việc').length,
-  };
-  updateStats(stats);
-  renderViecList(state.viecList);
+  if (!v) return;
+  v.trangThai  = trangThai;
+  v.nguoiNhan  = nguoiNhan;
+  if (trangThai === 'Đang làm')   v.thoiGianNhan = '';
+  if (trangThai === 'Hoàn thành') v.thoiGianHT   = '';
+  if (trangThai === 'Chưa làm')   { v.nguoiNhan = ''; v.thoiGianNhan = ''; }
+
+  // 2. Tìm và thay card hiện tại trong DOM (không re-render toàn bộ)
+  const el = document.getElementById('viec-list');
+  if (el) {
+    const cards = el.querySelectorAll('.viec-card');
+    let found = false;
+    cards.forEach(card => {
+      if (card.innerHTML.indexOf("'" + id + "'") !== -1 ||
+          card.innerHTML.indexOf('"' + id + '"') !== -1) {
+        const tmp = document.createElement('div');
+        tmp.innerHTML = renderViecCard(v);
+        card.replaceWith(tmp.firstElementChild);
+        found = true;
+      }
+    });
+    // Nếu card không tìm thấy (bị lọc ẩn) → re-render toàn bộ
+    if (!found) renderViecList(state.viecList);
+  }
+
+  // 3. Cập nhật số liệu thống kê ngay
+  const list = state.viecList;
+  const setCt = (elId, val) => { const e=document.getElementById(elId); if(e) e.textContent=val; };
+  setCt('stat-chua', list.filter(x=>x.trangThai==='Chưa làm').length);
+  setCt('stat-dang', list.filter(x=>x.trangThai==='Đang làm').length);
+  setCt('stat-hoan', list.filter(x=>x.trangThai==='Hoàn thành').length);
+  setCt('stat-tra',  list.filter(x=>x.trangThai==='Trả việc').length);
+  const cntEl = document.getElementById('viec-section-count');
+  if (cntEl) {
+    const shown = state.filteredTrangThai
+      ? list.filter(x=>x.trangThai===state.filteredTrangThai) : list;
+    cntEl.textContent = shown.length + ' việc';
+  }
 }
 
 // ============================================================
