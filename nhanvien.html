@@ -19,6 +19,7 @@
 
 <style>
 
+@import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap');
 /* ===== DATE PICKER dd/mm/yyyy ===== */
 .dp-wrap{position:relative}
 .dp-input{
@@ -75,7 +76,8 @@
 html{ height:100%; }
 body{
   height:100%;
-  font-family:'Segoe UI',system-ui,-apple-system,sans-serif;
+  font-family:'Be Vietnam Pro',system-ui,-apple-system,sans-serif;
+  -webkit-font-smoothing:antialiased;
   background:#F5E6C8;
   color:#3B2314;
   overflow:hidden;
@@ -107,7 +109,10 @@ body{
   --nav-h:64px;
   --header-h:60px;
   --ca-h:36px;
-  --banner-h:0px; /* tăng lên 30px khi show */
+  --banner-h:0px;
+  --ease:cubic-bezier(0.4,0,0.2,1);
+  --shadow:0 1px 4px rgba(59,35,20,0.08),0 4px 12px rgba(59,35,20,0.06);
+  --shadow-md:0 4px 16px rgba(59,35,20,0.12);
 }
 
 /* ===== APP SHELL ===== */
@@ -133,7 +138,7 @@ body{
 
 /* ===== HEADER ===== */
 .header{
-  background:var(--brown);
+  background:linear-gradient(90deg,var(--brown) 0%,#4A2D1A 100%);
   color:var(--cream);
   padding:12px 16px;
   display:flex;
@@ -195,7 +200,7 @@ body{
 
 /* ===== BOTTOM NAV ===== */
 .bottom-nav{
-  background:var(--brown);
+  background:linear-gradient(0deg,var(--brown) 0%,#4A2D1A 100%);
   display:flex;
   height:var(--nav-h);
   flex-shrink:0;
@@ -276,7 +281,7 @@ body{
   font-size:15px;color:var(--brown);
   outline:none;transition:border-color .2s;
 }
-.form-input:focus{border-color:var(--brown-light)}
+.form-input:focus{border-color:var(--brown-light);box-shadow:0 0 0 3px rgba(160,98,42,0.12)}
 .btn-login{
   width:100%;padding:14px;
   background:var(--brown);
