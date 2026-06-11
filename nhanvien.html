@@ -1241,33 +1241,26 @@ function renderViecCard(v) {
 async function nhanViec(id) {
   const btn = event.target;
   btn.disabled = true; btn.textContent = '...';
-
   if (!state.isOnline) {
     addOfflineQueue({ action:'nhanViec', id, localId:'loc_'+Date.now() });
     updateViecLocal(id, 'Đang làm', state.user.tenNV);
     toast('Đã lưu offline'); return;
   }
+  // Optimistic update ngay
+  updateViecLocal(id, 'Đang làm', state.user.tenNV);
+  toast('Đã nhận việc!');
   try {
-    // Optimistic update: cập nhật UI ngay lập tức không chờ API
-    updateViecLocal(id, 'Đang làm', state.user.tenNV);
-    toast('Đã nhận việc!');
-
-    // Gọi API nền (dùng GET)
     invalidateNVCache();
     const res = await apiGet({ action:'nhanViec', id });
     if (!res.success) {
-      // Hoàn tác nếu thất bại
       updateViecLocal(id, 'Chưa làm', '');
       toast(res.error || 'Lỗi nhận việc');
-      btn.disabled=false; btn.textContent='Nhận việc';
-    } else {
-      // Reload nền để đồng bộ
-      loadCongViec();
+      btn.disabled = false; btn.textContent = 'Nhận việc';
     }
+    loadCongViec();
   } catch(e) {
     addOfflineQueue({ action:'nhanViec', id, localId:'loc_'+Date.now() });
-    updateViecLocal(id, 'Đang làm', state.user.tenNV);
-    toast('Đã lưu offline');
+    toast('Lỗi kết nối - đã lưu offline');
   }
 }
 
@@ -1277,21 +1270,28 @@ async function nhanViec(id) {
 async function hoanThanhViec(id) {
   const btn = event.target;
   btn.disabled = true; btn.textContent = '...';
-
-  const action = { action:'hoanThanhViec', id, localId: 'loc_'+Date.now() };
   if (!state.isOnline) {
-    addOfflineQueue(action);
+    addOfflineQueue({ action:'hoanThanhViec', id, localId:'loc_'+Date.now() });
     updateViecLocal(id, 'Hoàn thành', state.user.tenNV);
-    toast('Đã lưu offline'); return;
+    toast('✓ Hoàn thành!'); return;
   }
+  // Optimistic update: cập nhật UI ngay, không chờ API
+  updateViecLocal(id, 'Hoàn thành', state.user.tenNV);
+  toast('✓ Hoàn thành!');
   try {
-    const res = await apiPost(action);
-    if (res.success) { toast('✓ Hoàn thành!'); await loadCongViec(); }
-    else { toast(res.error || 'Lỗi'); btn.disabled=false; btn.textContent='✓ Hoàn thành'; }
+    invalidateNVCache();
+    const res = await apiGet({ action:'hoanThanhViec', id });
+    if (!res.success) {
+      // Hoàn tác nếu lỗi
+      updateViecLocal(id, 'Đang làm', state.user.tenNV);
+      toast(res.error || 'Lỗi hoàn thành');
+      btn.disabled = false; btn.textContent = '✓ Hoàn thành';
+    }
+    // Luôn reload nền để đồng bộ
+    loadCongViec();
   } catch(e) {
-    addOfflineQueue(action);
-    updateViecLocal(id, 'Hoàn thành', state.user.tenNV);
-    toast('Đã lưu offline');
+    addOfflineQueue({ action:'hoanThanhViec', id, localId:'loc_'+Date.now() });
+    toast('Lỗi kết nối - đã lưu offline');
   }
 }
 
@@ -1308,24 +1308,25 @@ function closeModal() {
   state.traViecId = null;
 }
 async function confirmTraViec() {
-  const id    = state.traViecId;
-  const lyDo  = document.getElementById('modal-ly-do').value.trim();
+  const id   = state.traViecId;
+  const lyDo = document.getElementById('modal-ly-do').value.trim();
   closeModal();
-
-  const action = { action:'traViec', id, lyDo, localId:'loc_'+Date.now() };
   if (!state.isOnline) {
-    addOfflineQueue(action);
+    addOfflineQueue({ action:'traViec', id, lyDo, localId:'loc_'+Date.now() });
     updateViecLocal(id, 'Chưa làm', '');
     toast('Đã lưu offline'); return;
   }
   try {
-    const res = await apiPost(action);
-    if (res.success) { toast('Đã trả việc'); await loadCongViec(); }
-    else toast(res.error || 'Lỗi trả việc');
+    const res = await apiGet({ action:'traViec', id, lyDo });
+    if (res.success) {
+      toast('Đã trả việc');
+      invalidateNVCache();
+      await loadCongViec();
+    } else {
+      toast(res.error || 'Lỗi trả việc');
+    }
   } catch(e) {
-    addOfflineQueue(action);
-    updateViecLocal(id, 'Chưa làm', '');
-    toast('Đã lưu offline');
+    toast('Lỗi kết nối');
   }
 }
 
