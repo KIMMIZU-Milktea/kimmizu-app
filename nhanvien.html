@@ -1137,12 +1137,11 @@ async function initMain() {
   document.getElementById('date-badge').textContent = formatDateVN(new Date());
   updateCaBar();
 
-  // 3. Hiện skeleton loading ngay
+  // 3. Hiện skeleton ngay
   document.getElementById('viec-list').innerHTML =
     '<div style="text-align:center;padding:40px;color:var(--brown-pale)">Đang tải dữ liệu...</div>';
 
-  // 4. Đợi DOM render xong rồi mới load data
-  await new Promise(r => setTimeout(r, 50));
+  // 4. Load song song, không cần delay
   await Promise.all([loadCongViec(), loadThongBao()]);
 
   // 5. Auto-refresh mỗi 2 phút
@@ -1287,7 +1286,12 @@ function renderViecList(list, fromFilter) {
     return;
   }
 
-  el.innerHTML = list.map(v => renderViecCard(v)).join('');
+  // Dùng DocumentFragment để giảm DOM reflow
+  const frag = document.createDocumentFragment();
+  const tmp  = document.createElement('div');
+  list.forEach(v => { tmp.innerHTML = renderViecCard(v); frag.appendChild(tmp.firstElementChild); });
+  el.innerHTML = '';
+  el.appendChild(frag);
 }
 
 function renderViecGroupedByCa(list) {
@@ -1842,7 +1846,7 @@ function checkAuth(res) {
 
 // Cache + dedup cho app nhân viên
 const _nv_cache = {}, _nv_pending = {};
-const NV_CACHE_TTL = { getCongViec:0, getThongBao:30000 }; // getCongViec không cache
+const NV_CACHE_TTL = { getCongViec:10000, getThongBao:60000 }; // 10s đủ để tránh gọi trùng
 function invalidateNVCache() { Object.keys(_nv_cache).forEach(k=>delete _nv_cache[k]); }
 
 async function apiGet(params) {
@@ -2066,16 +2070,16 @@ function pad2(n) { return String(n).padStart(2,'0'); }
 // LÀM MỚI
 // ============================================================
 async function doRefresh(btn) {
-  if (btn) btn.classList.add('spinning');
-  invalidateNVCache(); // luôn xoá cache khi user chủ động refresh
+  if (btn) { btn.classList.add('spinning'); btn.disabled=true; }
+  invalidateNVCache();
   try {
     await Promise.all([loadCongViec(), loadThongBao()]);
     updateCaBar();
-    toast('Đã cập nhật');
+    toast('✓ Đã cập nhật');
   } catch(e) {
-    if (e.message !== 'Unauthorized') toast('Lỗi kết nối. Kiểm tra mạng.');
+    if (e.message !== 'Unauthorized') toast('Lỗi kết nối');
   } finally {
-    if (btn) setTimeout(() => btn.classList.remove('spinning'), 500);
+    if (btn) { setTimeout(()=>{btn.classList.remove('spinning');btn.disabled=false;},400); }
   }
 }
 

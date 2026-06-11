@@ -686,7 +686,7 @@ const API_URL = 'https://script.google.com/macros/s/AKfycbzhmQ_29XSNUwxnWDlt7YHk
 const PAGES = ['dashboard','congviec','thongbao','kpi','nhanvien','baocao','nhatky','caidat'];
 const S = { user:null, page:'dashboard', caiDat:{}, nvList:[], cvLoai:'', xoaId:'', _fromDash:false };
 const _cache={}, _pending={};
-const CACHE_TTL={getDashboard:30000,getCongViec:0,getThongBaoAdmin:30000,getKPI:60000,getNhanVien:120000,getBaoCao:60000,getCaiDat:300000,getNhatKy:10000};
+const CACHE_TTL={getDashboard:20000,getCongViec:15000,getThongBaoAdmin:30000,getKPI:60000,getNhanVien:300000,getBaoCao:60000,getCaiDat:600000,getNhatKy:10000};
 const DIRTY_MAP={taoCongViec:['getDashboard','getCongViec'],suaCongViec:['getDashboard','getCongViec'],xoaCongViec:['getDashboard','getCongViec'],taoThongBao:['getThongBaoAdmin'],suaThongBao:['getThongBaoAdmin'],xoaThongBao:['getThongBaoAdmin'],luuNhanVien:['getNhanVien'],luuCaiDat:['getCaiDat']};
 
 // Unauthorized handler
@@ -744,8 +744,7 @@ async function initApp(){
   document.getElementById('header-av').textContent=S.user.tenNV.charAt(0).toUpperCase();
   setDate();
   await new Promise(r=>setTimeout(r,200));
-  await Promise.all([loadCaiDat(),loadNV()]);
-  await loadDashboard();
+  await Promise.all([loadCaiDat(),loadNV(),loadDashboard()]);
   let _lastActive=Date.now(),_refreshTimer=null;
   function scheduleRefresh(){if(_refreshTimer)clearInterval(_refreshTimer);_refreshTimer=setInterval(()=>{if(document.visibilityState!=='visible')return;switch(S.page){case'dashboard':loadDashboard();break;case'congviec':loadCV();break;case'thongbao':loadTB();break;}checkNotif();},60000);}
   document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'){if(Date.now()-_lastActive>30000)goPage(S.page);scheduleRefresh();}else{_lastActive=Date.now();if(_refreshTimer)clearInterval(_refreshTimer);}});
