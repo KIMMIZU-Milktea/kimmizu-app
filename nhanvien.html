@@ -667,6 +667,7 @@ textarea.form-input{resize:vertical;min-height:80px}
 }
 .offline-banner.show{display:block;flex-shrink:0;}
 
+@keyframes slideDown{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:none}}
 /* ===== NÚT LÀM MỚI ===== */
 .btn-refresh-hd{
   background:rgba(245,230,200,0.15);
@@ -1375,8 +1376,22 @@ async function submitPhatSinh() {
     invalidateNVCache();
     const res = await apiGet(payload);
     if (res.success) {
+      // Thêm việc mới trực tiếp vào list — không cần reload
+      const newViec = {
+        id: res.id || ('loc_' + Date.now()),
+        tenViec: payload.tenViec,
+        moTa: payload.moTa || '',
+        loaiViec: 'Phát sinh',
+        ca: '',
+        ngayThucHien: formatDateAPI(new Date()),
+        trangThai: 'Chưa làm',
+        nguoiNhan: '',
+        uuTien: payload.uuTien || 'Bình thường',
+        hanChot: payload.hanChot || '',
+        nguoiTao: state.user.tenNV,
+      };
+      addViecToList(newViec);
       toast('✓ Đã tạo việc phát sinh!');
-      loadCongViec(); // nền
     } else {
       toast(res.error || 'Lỗi tạo việc');
     }
@@ -1512,6 +1527,26 @@ async function syncOffline() {
       await loadCongViec();
     }
   } catch(e) {}
+}
+
+// Thêm việc mới vào danh sách mà không gọi API
+function addViecToList(viec) {
+  // Thêm vào đầu danh sách
+  state.viecList.unshift(viec);
+  // Tạo card mới và thêm vào đầu #viec-list
+  const el = document.getElementById('viec-list');
+  if (el) {
+    const tmp = document.createElement('div');
+    tmp.innerHTML = renderViecCard(viec);
+    const newCard = tmp.firstElementChild;
+    // Thêm animation
+    newCard.style.animation = 'slideDown .3s ease';
+    el.insertBefore(newCard, el.firstChild);
+  }
+  // Cập nhật stats
+  const list = state.viecList;
+  const setCt = (elId, val) => { const e=document.getElementById(elId); if(e) e.textContent=val; };
+  setCt('stat-chua', list.filter(x=>x.trangThai==='Chưa làm').length);
 }
 
 function updateViecLocal(id, trangThai, nguoiNhan) {

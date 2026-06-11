@@ -1180,6 +1180,8 @@ function dashClick(loai,ca,trangThai,ngay){
     const cf=document.getElementById('cv-ca-f');
     if(lf) lf.value=loai;
     if(cf) cf.value=ca||'';
+    // Xoá cache để lấy dữ liệu mới nhất
+    Object.keys(_cache).forEach(c=>{if(c.includes('getCongViec'))delete _cache[c];});
     loadCV();
   },150);
 }
@@ -1283,11 +1285,12 @@ async function submitCV(){
     if(res.success){
       closeM('modal-cv');
       toast(id?'Đã cập nhật công việc ✓':'Đã tạo công việc ✓');
-      // Đặt filter ngày về ngày của việc vừa tạo/sửa để hiển thị ngay
+      // Set filter về ngày của việc vừa tạo/sửa
       const ngayViec = payload.ngayThucHien || fmtDate(new Date());
       document.getElementById('cv-ng').value = ngayViec;
-      // Xoá filter trạng thái để thấy tất cả
       document.getElementById('cv-tt').value = '';
+      // Xoá cache rồi reload
+      const k='getCongViec'; Object.keys(_cache).forEach(c=>{if(c.includes(k))delete _cache[c];});
       await loadCV();
     }
     else toast(res.error||'Lỗi lưu');
@@ -1301,7 +1304,10 @@ async function confirmXoa(){
     if(res.success){
       closeM('modal-xoa');
       toast('Đã xoá công việc');
-      await loadCV();
+      // Xoá card khỏi DOM ngay
+      const card = document.querySelector('[data-cvid="'+S.xoaId+'"]');
+      if(card) card.remove();
+      else { Object.keys(_cache).forEach(c=>{if(c.includes('getCongViec'))delete _cache[c];}); await loadCV(); }
     }else toast(res.error||'Lỗi xoá');
   }catch(e){toast('Lỗi kết nối');}
 }
@@ -1392,6 +1398,8 @@ async function submitNV() {
     if (res.success) {
       closeM('modal-nv');
       toast((id ? 'Đã cập nhật' : 'Đã thêm') + ' nhân viên ✓');
+      // Xoá cache NhanVien và reload ngay
+      Object.keys(_cache).forEach(c=>{if(c.includes('getNhanVien'))delete _cache[c];});
       await loadNV();
     } else {
       toast(res.error || 'Lỗi lưu nhân viên');
@@ -1552,7 +1560,7 @@ async function xoaThongBao(){
   if(!confirm('Xoá thông báo này? Không thể hoàn tác.'))return;
   try{
     const res=await api({action:'xoaThongBao',id});
-    if(res.success){closeM('modal-tb');toast('Đã xoá thông báo');await loadTB();}
+    if(res.success){closeM('modal-tb');toast('Đã xoá thông báo');Object.keys(_cache).forEach(c=>{if(c.includes('ThongBao'))delete _cache[c];});await loadTB();}
     else toast(res.error||'Lỗi xoá');
   }catch(e){toast('Lỗi kết nối');}
 }
@@ -1570,6 +1578,7 @@ async function submitTB(){
     if(res.success){
       closeM('modal-tb');
       toast(id?'Đã cập nhật thông báo ✓':'Đã gửi thông báo ✓');
+      Object.keys(_cache).forEach(c=>{if(c.includes('ThongBao'))delete _cache[c];});
       await loadTB();
     }else toast(res.error||'Lỗi');
   }catch(e){toast('Lỗi kết nối');}
