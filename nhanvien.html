@@ -1120,19 +1120,24 @@ function updateCaBar() {
 async function loadCongViec() {
   try {
     const today = formatDateAPI(new Date());
-    const res   = await apiGet({ action:'getCongViec', token:state.user.token, ngay:today });
+    const res   = await apiGet({ action:'getCongViec', ngay:today });
+    if (!checkAuth(res)) return;
     if (res.success) {
       state.viecList = res.data;
       updateStats(res.stats);
       renderViecList(state.viecList);
+      localStorage.setItem('kimmizu_viec', JSON.stringify(state.viecList));
+    } else {
+      toast(res.error || 'Lỗi tải công việc');
     }
   } catch(e) {
     // Offline: dùng cache
     const cached = localStorage.getItem('kimmizu_viec');
-    if (cached) { state.viecList = JSON.parse(cached); renderViecList(state.viecList); }
+    if (cached) {
+      state.viecList = JSON.parse(cached);
+      renderViecList(state.viecList);
+    }
   }
-  // Cache
-  if (state.viecList.length) localStorage.setItem('kimmizu_viec', JSON.stringify(state.viecList));
 }
 
 function updateStats(stats) {
@@ -1575,6 +1580,26 @@ function toast(msg) {
 // ============================================================
 // API HELPERS — dùng GET cho tất cả (tránh CORS với Apps Script)
 // ============================================================
+// ── Xử lý Unauthorized tập trung ──
+function handleUnauthorized() {
+  // Xoá token, đưa về màn hình login
+  localStorage.removeItem('kimmizu_user');
+  state.user = null;
+  state.viecList = [];
+  showScreen('screen-login');
+  toast('Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại.');
+}
+
+// Kiểm tra response có phải Unauthorized không
+function checkAuth(res) {
+  if (res && res.success === false &&
+      (res.error === 'Unauthorized' || res.error === 'Token hết hạn')) {
+    handleUnauthorized();
+    return false;
+  }
+  return true;
+}
+
 // Cache + dedup cho app nhân viên
 const _nv_cache = {}, _nv_pending = {};
 const NV_CACHE_TTL = { getCongViec:15000, getThongBao:20000 };
@@ -1805,6 +1830,8 @@ async function doRefresh(btn) {
     await Promise.all([loadCongViec(), loadThongBao()]);
     updateCaBar();
     toast('Đã cập nhật');
+  } catch(e) {
+    toast('Lỗi kết nối. Kiểm tra mạng.');
   } finally {
     if (btn) setTimeout(() => btn.classList.remove('spinning'), 500);
   }
