@@ -1111,7 +1111,9 @@ async function doLogin() {
       errEl.classList.add('show');
     }
   } catch(e) {
-    errEl.textContent = 'Lỗi kết nối. Kiểm tra mạng và thử lại.';
+    console.error('[KIMMIZU Login Error]', e);
+    console.error('[API_URL]', API_URL);
+    errEl.textContent = 'Lỗi: ' + e.message;
     errEl.classList.add('show');
   }
   btn.textContent = 'Đăng nhập'; btn.disabled = false;
@@ -1857,6 +1859,7 @@ async function apiGet(params) {
   // Dedup: không gọi trùng cùng lúc
   if(_nv_pending[qs]) return _nv_pending[qs];
 
+  console.log('[KIMMIZU API]', action, API_URL.substring(0,50)+'...');
   const req = fetch(API_URL+'?'+qs,{method:'GET',redirect:'follow',mode:'cors'})
     .then(r=>r.text())
     .then(text=>{
