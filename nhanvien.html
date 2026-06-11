@@ -1254,17 +1254,20 @@ async function nhanViec(id) {
   try {
     invalidateNVCache();
     const res = await apiGet({ action:'nhanViec', id });
+    if (!checkAuth(res)) return;
     if (res.success) {
       updateViecLocal(id, 'Đang làm', state.user.tenNV);
       toast('Đã nhận việc!');
-      setTimeout(() => loadCongViec(), 500);
+      await loadCongViec(); // reload ngay, không delay
     } else {
       btn.disabled = false; btn.textContent = 'Nhận việc';
-      toast(res.error || 'Lỗi nhận việc');
+      // Reload để đồng bộ trạng thái thật từ server
+      await loadCongViec();
+      toast(res.error || 'Không thể nhận việc');
     }
   } catch(e) {
     btn.disabled = false; btn.textContent = 'Nhận việc';
-    toast('Lỗi kết nối');
+    if (e.message !== 'Unauthorized') toast('Lỗi kết nối');
   }
 }
 
@@ -1280,20 +1283,21 @@ async function hoanThanhViec(id) {
     toast('✓ Hoàn thành!'); return;
   }
   try {
-    // Chờ API xác nhận TRƯỚC rồi mới cập nhật UI
     invalidateNVCache();
     const res = await apiGet({ action:'hoanThanhViec', id });
+    if (!checkAuth(res)) return;
     if (res.success) {
       updateViecLocal(id, 'Hoàn thành', state.user.tenNV);
       toast('✓ Hoàn thành!');
-      setTimeout(() => loadCongViec(), 800);
+      await loadCongViec();
     } else {
       btn.disabled = false; btn.textContent = '✓ Hoàn thành';
+      await loadCongViec(); // đồng bộ trạng thái thật
       toast(res.error || 'Lỗi hoàn thành');
     }
   } catch(e) {
     btn.disabled = false; btn.textContent = '✓ Hoàn thành';
-    toast('Lỗi kết nối');
+    if (e.message !== 'Unauthorized') toast('Lỗi kết nối');
   }
 }
 
@@ -1602,7 +1606,7 @@ function checkAuth(res) {
 
 // Cache + dedup cho app nhân viên
 const _nv_cache = {}, _nv_pending = {};
-const NV_CACHE_TTL = { getCongViec:15000, getThongBao:20000 };
+const NV_CACHE_TTL = { getCongViec:0, getThongBao:30000 }; // getCongViec không cache
 function invalidateNVCache() { Object.keys(_nv_cache).forEach(k=>delete _nv_cache[k]); }
 
 async function apiGet(params) {
