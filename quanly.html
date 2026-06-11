@@ -922,6 +922,17 @@ window.addEventListener('error', (e) => {
   }
 });
 
+// ── Event delegation dashboard (gắn ngay khi page load, không phụ thuộc login) ──
+document.addEventListener('click', function(e){
+  const el = e.target.closest('.d-num');
+  if (!el || el.classList.contains('z')) return;
+  const loai = el.dataset.loai || '';
+  const ca   = el.dataset.ca   || '';
+  const tt   = el.dataset.tt   || '';
+  const ngay = el.dataset.ngay || '';
+  if (typeof dashClick === 'function') dashClick(loai, ca, tt, ngay);
+});
+
 window.addEventListener('load', async () => {
   setDate();
   checkMobile();
@@ -991,14 +1002,7 @@ async function initApp() {
   await Promise.all([loadCaiDat(), loadNV()]);
   await loadDashboard();
 
-  // 6. Event delegation cho dashboard numbers (gắn 1 lần, không dùng onclick inline)
-  document.addEventListener('click', function(e){
-    const el = e.target.closest ? e.target.closest('.d-num') : null;
-    if (!el || el.classList.contains('z')) return;
-    dashClick(el.dataset.loai||'', el.dataset.ca||'', el.dataset.tt||'', el.dataset.ngay||'');
-  });
-
-  // 7. Auto-refresh thông minh (Page Visibility)
+  // 6. Auto-refresh thông minh (Page Visibility)
   let _lastActive = Date.now(), _refreshTimer = null;
   function scheduleRefresh() {
     if(_refreshTimer) clearInterval(_refreshTimer);
