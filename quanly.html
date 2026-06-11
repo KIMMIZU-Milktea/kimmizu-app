@@ -258,7 +258,10 @@ button{cursor:pointer}
   display:flex;align-items:center;justify-content:space-between;
   background:var(--brown);padding:10px 16px;
   border-radius:var(--radius-sm) var(--radius-sm) 0 0;
+  transition:background .15s;
+  user-select:none;
 }
+.dash-section-hd:hover{background:var(--brown-mid)}
 .dash-section-hd span{font-size:14px;font-weight:700;color:var(--cream)}
 .dash-section-hd .sec-tot{font-size:12px;color:var(--cream-dark)}
 .dash-ca-tbl{width:100%;border-collapse:collapse;background:var(--white);
@@ -988,7 +991,14 @@ async function initApp() {
   await Promise.all([loadCaiDat(), loadNV()]);
   await loadDashboard();
 
-  // 6. Auto-refresh thông minh (Page Visibility)
+  // 6. Event delegation cho dashboard numbers (gắn 1 lần, không dùng onclick inline)
+  document.addEventListener('click', function(e){
+    const el = e.target.closest ? e.target.closest('.d-num') : null;
+    if (!el || el.classList.contains('z')) return;
+    dashClick(el.dataset.loai||'', el.dataset.ca||'', el.dataset.tt||'', el.dataset.ngay||'');
+  });
+
+  // 7. Auto-refresh thông minh (Page Visibility)
   let _lastActive = Date.now(), _refreshTimer = null;
   function scheduleRefresh() {
     if(_refreshTimer) clearInterval(_refreshTimer);
@@ -1148,10 +1158,9 @@ function renderDashSections(tl, ngay){
   function num(n,tt,ca,loai){
     const cls=tt==='Chưa làm'?'cl':tt==='Đang làm'?'dl':tt==='Hoàn thành'?'ht':'tv';
     if(n===0) return `<span class="d-num z">0</span>`;
-    // Dùng data-attributes để tránh lỗi parse HTML với tiếng Việt có dấu
-    return `<span class="d-num ${cls}" style="cursor:pointer"
-      data-loai="${loai}" data-ca="${ca}" data-tt="${tt}" data-ngay="${ngay}"
-      onclick="dashClickEl(this)">${n}</span>`;
+    // Không dùng onclick inline — dùng event delegation bên dưới
+    return `<span class="d-num ${cls}"
+      data-loai="${loai}" data-ca="${ca}" data-tt="${tt}" data-ngay="${ngay}">${n}</span>`;
   }
 
   const html=DS_LOAI.map(({key,label,hasCa})=>{
@@ -1171,7 +1180,13 @@ function renderDashSections(tl, ngay){
     }
     if(!rows) rows=`<tr><td colspan="5" style="text-align:center;padding:14px;color:var(--brown-pale);font-size:13px">Không có việc hôm nay</td></tr>`;
     return `<div class="dash-section">
-      <div class="dash-section-hd"><span>${label}</span><span class="sec-tot">${tongSo} việc</span></div>
+      <div class="dash-section-hd" style="cursor:pointer"
+        data-loai="${key}" data-ngay="${ngay}"
+        onclick="dashClickEl(this)"
+        title="Xem tất cả việc ${key}">
+        <span>${label}</span>
+        <span class="sec-tot">${tongSo} việc →</span>
+      </div>
       <table class="dash-ca-tbl"><thead><tr>
         <th>${hasCa?'Ca':'Loại'}</th>
         <th style="color:var(--orange)">Chưa làm</th>
@@ -1181,22 +1196,23 @@ function renderDashSections(tl, ngay){
       </tr></thead><tbody>${rows}</tbody></table>
     </div>`;
   }).join('');
-  document.getElementById('dash-sections').innerHTML=html;
+  document.getElementById('dash-sections').innerHTML = html;
+  // onclick inline không hoạt động trong innerHTML → dùng event delegation 1 lần trên document
 }
 
 // Đọc params từ data-attributes (tránh lỗi HTML parse tiếng Việt)
 function dashClickEl(el){
-  const loai     = el.dataset.loai  || '';
-  const ca       = el.dataset.ca    || '';
-  const trangThai= el.dataset.tt    || '';
-  const ngay     = el.dataset.ngay  || '';
+  const loai      = el.dataset.loai  || '';
+  const ca        = el.dataset.ca    || '';
+  const trangThai = el.dataset.tt    || ''; // trống = xem tất cả trạng thái
+  const ngay      = el.dataset.ngay  || '';
   dashClick(loai, ca, trangThai, ngay);
 }
 
 function dashClick(loai,ca,trangThai,ngay){
   // 1. Set filter ngày và trạng thái
-  document.getElementById('cv-ng').value = ngay;
-  document.getElementById('cv-tt').value = trangThai;
+  document.getElementById('cv-ng').value = ngay || document.getElementById('cv-ng').value;
+  document.getElementById('cv-tt').value = trangThai; // trống = tất cả
 
   // 2. Set S.cvLoai để loadCV dùng đúng loại
   S.cvLoai = loai;
