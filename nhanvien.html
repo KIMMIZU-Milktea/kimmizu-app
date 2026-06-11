@@ -1256,13 +1256,12 @@ async function nhanViec(id) {
     const res = await apiGet({ action:'nhanViec', id });
     if (!checkAuth(res)) return;
     if (res.success) {
+      // Chỉ cập nhật card này — KHÔNG gọi loadCongViec()
+      // vì loadCongViec lọc theo ca có thể làm mất card
       updateViecLocal(id, 'Đang làm', state.user.tenNV);
       toast('Đã nhận việc!');
-      await loadCongViec(); // reload ngay, không delay
     } else {
       btn.disabled = false; btn.textContent = 'Nhận việc';
-      // Reload để đồng bộ trạng thái thật từ server
-      await loadCongViec();
       toast(res.error || 'Không thể nhận việc');
     }
   } catch(e) {
@@ -1289,10 +1288,8 @@ async function hoanThanhViec(id) {
     if (res.success) {
       updateViecLocal(id, 'Hoàn thành', state.user.tenNV);
       toast('✓ Hoàn thành!');
-      await loadCongViec();
     } else {
       btn.disabled = false; btn.textContent = '✓ Hoàn thành';
-      await loadCongViec(); // đồng bộ trạng thái thật
       toast(res.error || 'Lỗi hoàn thành');
     }
   } catch(e) {
@@ -1323,16 +1320,17 @@ async function confirmTraViec() {
     toast('Đã lưu offline'); return;
   }
   try {
+    invalidateNVCache();
     const res = await apiGet({ action:'traViec', id, lyDo });
+    if (!checkAuth(res)) return;
     if (res.success) {
+      updateViecLocal(id, 'Chưa làm', '');
       toast('Đã trả việc');
-      invalidateNVCache();
-      await loadCongViec();
     } else {
       toast(res.error || 'Lỗi trả việc');
     }
   } catch(e) {
-    toast('Lỗi kết nối');
+    if (e.message !== 'Unauthorized') toast('Lỗi kết nối');
   }
 }
 
@@ -1830,12 +1828,13 @@ function pad2(n) { return String(n).padStart(2,'0'); }
 // ============================================================
 async function doRefresh(btn) {
   if (btn) btn.classList.add('spinning');
+  invalidateNVCache(); // luôn xoá cache khi user chủ động refresh
   try {
     await Promise.all([loadCongViec(), loadThongBao()]);
     updateCaBar();
     toast('Đã cập nhật');
   } catch(e) {
-    toast('Lỗi kết nối. Kiểm tra mạng.');
+    if (e.message !== 'Unauthorized') toast('Lỗi kết nối. Kiểm tra mạng.');
   } finally {
     if (btn) setTimeout(() => btn.classList.remove('spinning'), 500);
   }
