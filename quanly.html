@@ -1148,7 +1148,10 @@ function renderDashSections(tl, ngay){
   function num(n,tt,ca,loai){
     const cls=tt==='Chưa làm'?'cl':tt==='Đang làm'?'dl':tt==='Hoàn thành'?'ht':'tv';
     if(n===0) return `<span class="d-num z">0</span>`;
-    return `<span class="d-num ${cls}" onclick="dashClick('${loai}','${ca}','${tt}','${ngay}')">${n}</span>`;
+    // Dùng data-attributes để tránh lỗi parse HTML với tiếng Việt có dấu
+    return `<span class="d-num ${cls}" style="cursor:pointer"
+      data-loai="${loai}" data-ca="${ca}" data-tt="${tt}" data-ngay="${ngay}"
+      onclick="dashClickEl(this)">${n}</span>`;
   }
 
   const html=DS_LOAI.map(({key,label,hasCa})=>{
@@ -1179,6 +1182,15 @@ function renderDashSections(tl, ngay){
     </div>`;
   }).join('');
   document.getElementById('dash-sections').innerHTML=html;
+}
+
+// Đọc params từ data-attributes (tránh lỗi HTML parse tiếng Việt)
+function dashClickEl(el){
+  const loai     = el.dataset.loai  || '';
+  const ca       = el.dataset.ca    || '';
+  const trangThai= el.dataset.tt    || '';
+  const ngay     = el.dataset.ngay  || '';
+  dashClick(loai, ca, trangThai, ngay);
 }
 
 function dashClick(loai,ca,trangThai,ngay){
