@@ -592,10 +592,10 @@ textarea.inp{resize:vertical;min-height:80px}
       <div class="page" id="page-congviec">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:10px">
           <div class="tab-bar" style="margin-bottom:0">
-            <button class="tab active" onclick="switchCVTab('',this)">Tất cả</button>
-            <button class="tab" onclick="switchCVTab('Ca',this)">Ca</button>
-            <button class="tab" onclick="switchCVTab('Định kỳ',this)">Định kỳ</button>
-            <button class="tab" onclick="switchCVTab('Phát sinh',this)">Phát sinh</button>
+            <button class="tab active" data-loai="" onclick="switchCVTab('',this)">Tất cả</button>
+            <button class="tab" data-loai="Ca" onclick="switchCVTab('Ca',this)">Ca</button>
+            <button class="tab" data-loai="Định kỳ" onclick="switchCVTab('Định kỳ',this)">Định kỳ</button>
+            <button class="tab" data-loai="Phát sinh" onclick="switchCVTab('Phát sinh',this)">Phát sinh</button>
           </div>
           <button class="btn btn-primary" onclick="openModalCV()">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Tạo việc
@@ -1082,7 +1082,17 @@ function goPage(p){
   closeSB();
   switch(p){
     case'dashboard':loadDashboard();break;
-    case'congviec':loadCV();break;
+    case'congviec':
+      // Nếu goPage được gọi thông thường (không từ dashClick) → reset filter loại
+      if(!S._fromDash){
+        S.cvLoai='';
+        document.querySelectorAll('#page-congviec .tab').forEach(t=>{
+          t.classList.toggle('active', t.dataset.loai==='');
+        });
+      }
+      S._fromDash=false;
+      loadCV();
+      break;
     case'nhanvien':loadNV();break;
     case'thongbao':loadTB();break;
     case'kpi':loadKPI();break;
@@ -1172,18 +1182,27 @@ function renderDashSections(tl, ngay){
 }
 
 function dashClick(loai,ca,trangThai,ngay){
-  document.getElementById('cv-ng').value=ngay;
-  document.getElementById('cv-tt').value=trangThai;
+  // 1. Set filter ngày và trạng thái
+  document.getElementById('cv-ng').value = ngay;
+  document.getElementById('cv-tt').value = trangThai;
+
+  // 2. Set S.cvLoai để loadCV dùng đúng loại
+  S.cvLoai = loai;
+
+  // 3. Set dropdown Ca
+  const cf = document.getElementById('cv-ca-f');
+  if(cf) cf.value = ca||'';
+
+  // 4. Sync tab button với loại (highlight đúng tab)
+  document.querySelectorAll('#page-congviec .tab').forEach(t=>{
+    t.classList.toggle('active', t.dataset.loai===loai);
+  });
+
+  // 5. Đánh dấu đến từ dashboard (không reset filter)
+  S._fromDash = true;
+  // 6. Xoá cache rồi chuyển trang
+  Object.keys(_cache).forEach(c=>{if(c.includes('getCongViec'))delete _cache[c];});
   goPage('congviec');
-  setTimeout(()=>{
-    const lf=document.getElementById('cv-loai-f');
-    const cf=document.getElementById('cv-ca-f');
-    if(lf) lf.value=loai;
-    if(cf) cf.value=ca||'';
-    // Xoá cache để lấy dữ liệu mới nhất
-    Object.keys(_cache).forEach(c=>{if(c.includes('getCongViec'))delete _cache[c];});
-    loadCV();
-  },150);
 }
 
 // ============================================================
@@ -1199,16 +1218,21 @@ let _cvTimer=null;
 function debouncedLoadCV(){if(_cvTimer)clearTimeout(_cvTimer);_cvTimer=setTimeout(()=>loadCV(),300);}
 
 async function loadCV(){
-  const ngay=document.getElementById('cv-ng').value;
-  const tt=document.getElementById('cv-tt').value;
-  const ca=document.getElementById('cv-ca-f').value;
+  const ngay = document.getElementById('cv-ng').value;
+  const tt   = document.getElementById('cv-tt').value;
+  const ca   = document.getElementById('cv-ca-f').value;
   try{
-    const p={action:'getCongViec'};
-    if(ngay)p.ngay=ngay;if(S.cvLoai)p.loai=S.cvLoai;if(ca)p.ca=ca;
-    const res=await api(p);
-    if(!res.success)return;
-    let list=res.data;
-    if(tt)list=list.filter(v=>v.trangThai===tt);
+    const p = {action:'getCongViec'};
+    if(ngay) p.ngay = ngay;
+    // Truyền loại lên server để lọc chính xác
+    if(S.cvLoai) p.loai = S.cvLoai;
+    if(ca) p.ca = ca;
+    const res = await api(p);
+    if(!res.success) return;
+    let list = res.data;
+    // Lọc thêm client-side để đảm bảo chính xác
+    if(S.cvLoai) list = list.filter(v => v.loaiViec === S.cvLoai);
+    if(tt)       list = list.filter(v => v.trangThai === tt);
     const tbody=document.getElementById('cv-tbl');
     if(!list.length){tbody.innerHTML='<tr><td colspan="8" style="text-align:center;color:#999;padding:24px">Không có công việc nào</td></tr>';return;}
     tbody.innerHTML=list.map(v=>`<tr>
