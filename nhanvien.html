@@ -1246,21 +1246,20 @@ async function nhanViec(id) {
     updateViecLocal(id, 'Đang làm', state.user.tenNV);
     toast('Đã lưu offline'); return;
   }
-  // Optimistic update ngay
-  updateViecLocal(id, 'Đang làm', state.user.tenNV);
-  toast('Đã nhận việc!');
   try {
     invalidateNVCache();
     const res = await apiGet({ action:'nhanViec', id });
-    if (!res.success) {
-      updateViecLocal(id, 'Chưa làm', '');
-      toast(res.error || 'Lỗi nhận việc');
+    if (res.success) {
+      updateViecLocal(id, 'Đang làm', state.user.tenNV);
+      toast('Đã nhận việc!');
+      setTimeout(() => loadCongViec(), 500);
+    } else {
       btn.disabled = false; btn.textContent = 'Nhận việc';
+      toast(res.error || 'Lỗi nhận việc');
     }
-    loadCongViec();
   } catch(e) {
-    addOfflineQueue({ action:'nhanViec', id, localId:'loc_'+Date.now() });
-    toast('Lỗi kết nối - đã lưu offline');
+    btn.disabled = false; btn.textContent = 'Nhận việc';
+    toast('Lỗi kết nối');
   }
 }
 
@@ -1275,23 +1274,21 @@ async function hoanThanhViec(id) {
     updateViecLocal(id, 'Hoàn thành', state.user.tenNV);
     toast('✓ Hoàn thành!'); return;
   }
-  // Optimistic update: cập nhật UI ngay, không chờ API
-  updateViecLocal(id, 'Hoàn thành', state.user.tenNV);
-  toast('✓ Hoàn thành!');
   try {
+    // Chờ API xác nhận TRƯỚC rồi mới cập nhật UI
     invalidateNVCache();
     const res = await apiGet({ action:'hoanThanhViec', id });
-    if (!res.success) {
-      // Hoàn tác nếu lỗi
-      updateViecLocal(id, 'Đang làm', state.user.tenNV);
-      toast(res.error || 'Lỗi hoàn thành');
+    if (res.success) {
+      updateViecLocal(id, 'Hoàn thành', state.user.tenNV);
+      toast('✓ Hoàn thành!');
+      setTimeout(() => loadCongViec(), 800);
+    } else {
       btn.disabled = false; btn.textContent = '✓ Hoàn thành';
+      toast(res.error || 'Lỗi hoàn thành');
     }
-    // Luôn reload nền để đồng bộ
-    loadCongViec();
   } catch(e) {
-    addOfflineQueue({ action:'hoanThanhViec', id, localId:'loc_'+Date.now() });
-    toast('Lỗi kết nối - đã lưu offline');
+    btn.disabled = false; btn.textContent = '✓ Hoàn thành';
+    toast('Lỗi kết nối');
   }
 }
 
