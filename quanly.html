@@ -701,7 +701,10 @@ async function api(params){
   const cacheKey=qs,ttl=CACHE_TTL[action];
   if(ttl&&_cache[cacheKey]&&(Date.now()-_cache[cacheKey].t<ttl))return _cache[cacheKey].d;
   if(_pending[cacheKey])return _pending[cacheKey];
-  const req=fetch(API_URL+'?'+qs,{method:'GET',redirect:'follow',mode:'cors'})
+  const req=Promise.race([
+    fetch(API_URL+'?'+qs,{method:'GET',redirect:'follow',mode:'cors'}),
+    new Promise((_,rej)=>setTimeout(()=>rej(new Error('Timeout')),15000))
+  ])
     .then(r=>r.text()).then(text=>{
       let data;try{data=JSON.parse(text);}catch(e){throw new Error('Parse error: '+text.substring(0,200));}
       if(data&&data.success===false&&data.error==='Unauthorized'){delete _pending[cacheKey];handleUnauthorizedQL();throw new Error('Unauthorized');}
@@ -860,7 +863,7 @@ function dashClick(loai,ca,trangThai,ngay){
   S.cvLoai=loai;S._fromDash=true;
   document.querySelectorAll('#page-congviec .tab').forEach(t=>t.classList.toggle('active',t.dataset.loai===loai));
   const cf=document.getElementById('cv-ca-f');if(cf)cf.value=ca||'';
-  Object.keys(_cache).forEach(c=>{if(c.includes('getCongViec'))delete _cache[c];});
+  Object.keys(_cache).filter(k=>k.includes('getCongViec')||k.includes('getDashboard')).forEach(k=>delete _cache[k]);
   goPage('congviec');
 }
 
@@ -914,7 +917,7 @@ async function submitCV(){
       closeM('modal-cv');toast(id?'Đã cập nhật công việc ✓':'Đã tạo công việc ✓');
       const ngayViec=payload.ngayThucHien||fmtDate(new Date());
       document.getElementById('cv-ng').value=ngayViec;document.getElementById('cv-tt').value='';
-      Object.keys(_cache).forEach(c=>{if(c.includes('getCongViec'))delete _cache[c];});
+      Object.keys(_cache).filter(k=>k.includes('getCongViec')||k.includes('getDashboard')).forEach(k=>delete _cache[k]);
       await loadCV();
     }else toast(res.error||'Lỗi lưu');
   }catch(e){if(e.message!=='Unauthorized')toast('Lỗi kết nối');}
@@ -923,7 +926,7 @@ function openModalXoa(id,ten){S.xoaId=id;document.getElementById('xoa-msg').text
 async function confirmXoa(){
   try{
     const res=await api({action:'xoaCongViec',id:S.xoaId});
-    if(res.success){closeM('modal-xoa');toast('Đã xoá công việc');Object.keys(_cache).forEach(c=>{if(c.includes('getCongViec'))delete _cache[c];});await loadCV();}
+    if(res.success){closeM('modal-xoa');toast('Đã xoá công việc');Object.keys(_cache).filter(k=>k.includes('getCongViec')||k.includes('getDashboard')).forEach(k=>delete _cache[k]);await loadCV();}
     else toast(res.error||'Lỗi xoá');
   }catch(e){if(e.message!=='Unauthorized')toast('Lỗi kết nối');}
 }
@@ -965,14 +968,14 @@ function openModalTB(){
   document.getElementById('modal-tb').classList.add('open');setTimeout(()=>document.getElementById('tb-td').focus(),100);
 }
 function openModalSuaTBById(id){const t=(window._tbList||[]).find(x=>x.id===id);if(!t){toast('Không tìm thấy');return;}document.getElementById('tb-edit-id').value=t.id;document.getElementById('tb-modal-title').textContent='Sửa thông báo';document.getElementById('tb-td').value=t.tieuDe||'';document.getElementById('tb-nd').value=t.noiDung||'';document.getElementById('tb-btn-xoa').style.display='inline-flex';document.getElementById('tb-btn-submit').textContent='Lưu';const sel=document.getElementById('tb-nr');for(let i=0;i<sel.options.length;i++){if(sel.options[i].value===t.nguoiNhan){sel.selectedIndex=i;break;}}document.getElementById('modal-tb').classList.add('open');}
-async function xoaThongBao(){const id=document.getElementById('tb-edit-id').value;if(!id)return;if(!confirm('Xoá thông báo này?'))return;try{const res=await api({action:'xoaThongBao',id});if(res.success){closeM('modal-tb');toast('Đã xoá thông báo');Object.keys(_cache).forEach(c=>{if(c.includes('ThongBao'))delete _cache[c];});await loadTB();}else toast(res.error||'Lỗi xoá');}catch(e){if(e.message!=='Unauthorized')toast('Lỗi kết nối');}}
+async function xoaThongBao(){const id=document.getElementById('tb-edit-id').value;if(!id)return;if(!confirm('Xoá thông báo này?'))return;try{const res=await api({action:'xoaThongBao',id});if(res.success){closeM('modal-tb');toast('Đã xoá thông báo');Object.keys(_cache).filter(k=>k.includes('ThongBao')).forEach(k=>delete _cache[k]);await loadTB();}else toast(res.error||'Lỗi xoá');}catch(e){if(e.message!=='Unauthorized')toast('Lỗi kết nối');}}
 async function submitTB(){
   const td=document.getElementById('tb-td').value.trim(),nd=document.getElementById('tb-nd').value.trim(),id=document.getElementById('tb-edit-id').value;
   if(!td||!nd){toast('Vui lòng nhập đủ tiêu đề và nội dung');return;}
   const nguoiNhan=document.getElementById('tb-nr').value;
   try{
     const res=await api(id?{action:'suaThongBao',id,tieuDe:td,noiDung:nd,nguoiNhan}:{action:'taoThongBao',tieuDe:td,noiDung:nd,nguoiNhan});
-    if(res.success){closeM('modal-tb');toast(id?'Đã cập nhật ✓':'Đã gửi thông báo ✓');Object.keys(_cache).forEach(c=>{if(c.includes('ThongBao'))delete _cache[c];});await loadTB();}
+    if(res.success){closeM('modal-tb');toast(id?'Đã cập nhật ✓':'Đã gửi thông báo ✓');Object.keys(_cache).filter(k=>k.includes('ThongBao')).forEach(k=>delete _cache[k]);await loadTB();}
     else toast(res.error||'Lỗi');
   }catch(e){if(e.message!=='Unauthorized')toast('Lỗi kết nối');}
 }
