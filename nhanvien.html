@@ -2139,7 +2139,8 @@ function openUserMenu() {
 function closeUserMenu() {
   document.getElementById('user-sheet-ov').classList.remove('open');
 }
-function doLogout() {
+async function doLogout() {
+  try{await apiGet({action:'dangXuat'});}catch(e){}
   localStorage.removeItem('kimmizu_user');
   localStorage.removeItem('kimmizu_viec');
   localStorage.removeItem('kimmizu_offline');

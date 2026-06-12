@@ -769,7 +769,14 @@ async function doLogin(){
   }catch(e){console.error('[Login]',e);errEl.textContent='Lỗi: '+e.message;errEl.classList.add('show');}
   btn.textContent='Đăng nhập';btn.disabled=false;
 }
-function doLogout(){localStorage.removeItem('kimmizu_ql');S.user=null;document.getElementById('screen-app').classList.remove('active');document.getElementById('screen-login').classList.add('active');closeUserOv();}
+async function doLogout(){
+  try{await api({action:'dangXuat',token:S.user?.token||''});}catch(e){}
+  localStorage.removeItem('kimmizu_ql');
+  S.user=null;
+  document.getElementById('screen-app').classList.remove('active');
+  document.getElementById('screen-login').classList.add('active');
+  try{closeUserOv();}catch(e){}
+}
 
 // NAVIGATION
 function goPage(p){
