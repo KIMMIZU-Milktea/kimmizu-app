@@ -1040,6 +1040,29 @@ async function submitNV(){
 }
 
 // BÁO CÁO
+async function xuatExcel(){
+  const tu  = document.getElementById('bc-tu').value;
+  const den = document.getElementById('bc-den').value;
+  if(!tu||!den){toast('Vui lòng chọn khoảng thời gian');return;}
+  const btn = document.getElementById('btn-excel');
+  btn.textContent='⏳ Đang tạo...'; btn.disabled=true;
+  try{
+    const res = await api({action:'xuatBaoCaoExcel',tuNgay:tu,denNgay:den});
+    if(res.success){
+      toast('✅ Đã tạo file Excel — đang mở...');
+      // Mở link download trong tab mới
+      window.open(res.exportUrl,'_blank');
+    } else {
+      toast(res.error||'Lỗi tạo Excel');
+    }
+  }catch(e){
+    toast('Lỗi kết nối');
+  }finally{
+    btn.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" width="14" height="14"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="16" y2="17"/></svg>Xuất Excel';
+    btn.disabled=false;
+  }
+}
+
 async function loadBC(){
   const tu=document.getElementById('bc-tu').value,den=document.getElementById('bc-den').value;
   if(!tu||!den){toast('Vui lòng chọn khoảng thời gian');return;}

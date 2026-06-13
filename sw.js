@@ -1,63 +1,56 @@
-// KIMMIZU Service Worker - Offline Support
-const CACHE_NAME = 'kimmizu-v1';
-const CACHE_URLS = [
-  '/nhanvien.html',
-  '/manifest.json',
+// KIMMIZU Service Worker v1.0
+// Cache các file tĩnh để app load nhanh hơn khi có mạng yếu
+const CACHE_NAME = 'kimmizu-nv-v1';
+const STATIC_FILES = [
+  './nhanvien.html',
+  './icon-192.png',
+  './icon-512.png',
+  './manifest.json',
 ];
 
-// Install: cache files
-self.addEventListener('install', event => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then(cache => cache.addAll(CACHE_URLS))
+// Cài đặt: cache file tĩnh
+self.addEventListener('install', e => {
+  e.waitUntil(
+    caches.open(CACHE_NAME)
+      .then(cache => cache.addAll(STATIC_FILES))
+      .then(() => self.skipWaiting())
   );
-  self.skipWaiting();
 });
 
-// Activate: clear old caches
-self.addEventListener('activate', event => {
-  event.waitUntil(
+// Activate: xoá cache cũ
+self.addEventListener('activate', e => {
+  e.waitUntil(
     caches.keys().then(keys =>
       Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k)))
-    )
+    ).then(() => self.clients.claim())
   );
-  self.clients.claim();
 });
 
-// Fetch: network first, fallback to cache
-self.addEventListener('fetch', event => {
-  const url = new URL(event.request.url);
+// Fetch strategy: Network first, cache fallback
+// API calls luôn dùng network (không cache)
+self.addEventListener('fetch', e => {
+  const url = new URL(e.request.url);
 
-  // API calls: network only (không cache)
+  // API calls → không cache, luôn dùng network
   if (url.hostname.includes('script.google.com')) {
-    event.respondWith(
-      fetch(event.request).catch(() =>
-        new Response(JSON.stringify({ success: false, error: 'offline' }), {
-          headers: { 'Content-Type': 'application/json' }
-        })
-      )
-    );
+    e.respondWith(fetch(e.request).catch(() =>
+      new Response(JSON.stringify({success:false,error:'Offline'}),
+        {headers:{'Content-Type':'application/json'}})
+    ));
     return;
   }
 
-  // App files: network first, fallback cache
-  event.respondWith(
-    fetch(event.request)
+  // File tĩnh → network first, fallback cache
+  e.respondWith(
+    fetch(e.request)
       .then(res => {
-        const clone = res.clone();
-        caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
+        // Cập nhật cache khi có network
+        if (res.ok) {
+          const clone = res.clone();
+          caches.open(CACHE_NAME).then(cache => cache.put(e.request, clone));
+        }
         return res;
       })
-      .catch(() => caches.match(event.request))
+      .catch(() => caches.match(e.request))
   );
-});
-
-// Background sync (khi có mạng trở lại)
-self.addEventListener('sync', event => {
-  if (event.tag === 'sync-offline') {
-    event.waitUntil(
-      self.clients.matchAll().then(clients => {
-        clients.forEach(client => client.postMessage({ type: 'SYNC_OFFLINE' }));
-      })
-    );
-  }
 });

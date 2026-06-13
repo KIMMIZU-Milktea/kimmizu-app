@@ -1,26 +1,18 @@
 {
-  "name": "KIMMIZU - Quản lý Công việc",
+  "name": "KIMMIZU - Nhân Viên",
   "short_name": "KIMMIZU",
-  "description": "Ứng dụng quản lý công việc quán trà sữa KIMMIZU",
+  "description": "Quản lý công việc nhân viên KIMMIZU Milk Tea",
   "start_url": "./nhanvien.html",
-  "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#3B2314",
-  "theme_color": "#F5E6C8",
+  "theme_color": "#3B2314",
   "lang": "vi",
   "icons": [
-    {
-      "src": "./icon-192.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "./icon-512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any maskable"
-    }
+    {"src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable"},
+    {"src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable"}
+  ],
+  "screenshots": [
+    {"src": "icon-512.png", "sizes": "512x512", "type": "image/png", "form_factor": "narrow"}
   ]
 }
