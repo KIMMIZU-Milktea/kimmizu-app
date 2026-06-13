@@ -1123,8 +1123,6 @@ async function doLogin() {
       errEl.classList.add('show');
     }
   } catch(e) {
-    console.error('[KIMMIZU Login Error]', e);
-    console.error('[API_URL]', API_URL);
     errEl.textContent = 'Lỗi: ' + e.message;
     errEl.classList.add('show');
   }
